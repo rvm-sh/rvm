@@ -1,9 +1,11 @@
 # rvm
 ## Runner Version Manager
 
-[!WARNING]: 
- > Currently only supports linux
- > Not ready for production use
+>[!WARNING]
+> Currently only supports linux
+
+> [!CAUTION]
+> Not ready for production use
 
 
 ### Introduction and Motivations
