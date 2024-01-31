@@ -22,9 +22,11 @@ rvm() {
             update "$@"
             ;;
         set | use)
-            update "$@"
+            set "$@"
             ;;
-        
+        echo | help)
+            echo "$@"
+            ;;          
         *)
             echo "Unrecognized command: $1"
             ;;
@@ -74,6 +76,12 @@ update() {
 set() {
     # Implement the logic for 'set' command
     echo "Set / Use command called with argument: $2"
+
+}
+
+echo() {
+    # A template argument to test if rvm can be reached
+    echo "Hello, $2, what can i do for you?"
 
 }
 
