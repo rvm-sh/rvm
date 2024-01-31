@@ -16,15 +16,38 @@ mv "${HOME}/rvm.sh" "${RVM_DIR}/rvm.sh"
 # Make rvm.sh executable
 chmod +x "${RVM_DIR}/rvm.sh"
 
-# Modify the user's shell profile
-PROFILE="${HOME}/.profile"  # Default to .profile
+# Determine the shell using the process name
+SHELL_NAME=$(ps -p $$ -o comm=)
+case "$SHELL_NAME" in
+    bash)
+        PROFILE="$HOME/.bashrc"
+        ;;
+    zsh)
+        PROFILE="$HOME/.zshrc"
+        ;;
+    ksh)
+        PROFILE="$HOME/.kshrc"
+        ;;
+    fish)
+        PROFILE="$HOME/.config/fish/config.fish"
+        ;;
+    *sh|sh)
+        PROFILE="$HOME/.profile"
+        ;;
+    *)
+        echo "Unrecognized shell: $SHELL_NAME"
+        exit 1
+        ;;
+esac
 
-# Source rvm.sh in the profile
-echo "export RVM_DIR=\"${RVM_DIR}\"" >> "$PROFILE"
-echo "[ -s \"\$RVM_DIR/rvm.sh\" ] && . \"\$RVM_DIR/rvm.sh\"  # This loads rvm" >> "$PROFILE"
+echo "Detected shell: $SHELL_NAME"
+echo "Using profile file: $PROFILE"
+
+echo "export RVM_DIR=\"$RVM_DIR\"" >> "$PROFILE"
+echo "[ -s \"$RVM_DIR/rvm.sh\" ] && . \"$RVM_DIR/rvm.sh\"  # This loads rvm" >> "$PROFILE"
 
 # Remove install script after installation
-rm -- "$0"
+# rm -- "$0"
 
 # Inform the user
 echo "Installation complete and install script removed. Please restart your terminal or run 'source $PROFILE' to use rvm."

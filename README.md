@@ -39,6 +39,7 @@ Feature goal:
 - Target to have renames/alias, for example, if i call npm install, it calls pnpm install instead
 - Target ask if it will remove any path redirection / bindings on uninstall of rvm
 - Target ask if it will remove any installed packages on uninstall of rvm
+- Ability to set new profile for a new shell installed
 
 ## Usage Commands
 
