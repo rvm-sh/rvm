@@ -53,7 +53,7 @@ echo "#end of runner version manager settings" >> "$PROFILE"
 # rm -- "$0"
 
 # Inform the user
-echo "Installation complete and install script removed. Please restart your terminal or run 'source $PROFILE' to use rvm."
+echo "Installation complete. Please restart your terminal or run 'source $PROFILE' to use rvm."
 
 
 }
