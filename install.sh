@@ -3,7 +3,7 @@
 { # this ensures the entire script is downloaded #
 
 # Fetch the rvm.sh script
-RVM_SCRIPT_URL="https://github.com/rvm-sh/rvm/blob/main/rvm.sh"
+RVM_SCRIPT_URL="https://raw.githubusercontent.com/rvm-sh/rvm/main/rvm.sh"
 wget -q "$RVM_SCRIPT_URL" -O "${HOME}/rvm.sh"
 
 # Create the .rvm directory in the user's home directory
