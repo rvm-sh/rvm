@@ -43,8 +43,11 @@ esac
 echo "Detected shell: $SHELL_NAME"
 echo "Using profile file: $PROFILE"
 
+echo "#runner version manager settings" >> "$PROFILE"
 echo "export RVM_DIR=\"$RVM_DIR\"" >> "$PROFILE"
 echo "[ -s \"$RVM_DIR/rvm.sh\" ] && . \"$RVM_DIR/rvm.sh\"  # This loads rvm" >> "$PROFILE"
+echo "#end of runner version manager settings" >> "$PROFILE"
+
 
 # Remove install script after installation
 # rm -- "$0"
