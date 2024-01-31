@@ -21,19 +21,22 @@ A runner(or runtime as is commonly termed), is the programme that is run to exec
 ## Goals
 Current goal is to manage pnpm, npm, node, yarn, react, vue and other js runners / frameworks / compilers but hopefully will include other programming language such as python and rust. The main goal is to have a single version manager for everything that can fall under the category of a runner.
 
-It aims to be somewhat of an extention of nvm and slighly less than a full-featured version manager that asdf is
+It aims to be somewhat of an extention of nvm and slighly less than a full-featured version manager that asdf is.
+
+Currently working on supporting:
+ - pnpm
 
 Feature goal:
  - An all-in-one version manager for any runner
  - Stick to pure shell commands, no dependencies
  - Monolithic rather than modular (any new package being supported is added via update to rvm rather than as a plugin)
  - Any runner has a default but can also use any specific version that is installed
- - Use multiple overlapping runners (for example node, deno and bun) in the same system
+ - Use multiple overlapping runners (for example pnpm, npm and bun) in the same system
  - Clean - aims to leave no footprint after uninstall whenever possible
 
 ## Future possibilities
 - Target to be POSIX compliant
-- Target to support node, yarn, bun, python and others
+- Target to support node, python, rust and others
 - Target to ensure compatibility with all shells
 - Target to support MacOS, Windows, as well as different architectures in the future
 - Target to have renames/alias, for example, if i call npm install, it calls pnpm install instead

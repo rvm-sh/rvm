@@ -1,134 +1,85 @@
 #!/bin/sh
 
+# Common function to handle manager script delegation
+delegate_to_manager() {
+    local command=$1
+    local runtime_manager=$2
+    local manager_script="${HOME}/.rvm/managers/${runtime_manager}-manager.sh"
+
+    local function_to_call="${runtime_manager}_${command}"
+
+    if [ -f "$manager_script" ]; then
+        . "$manager_script"
+        if command -v "$function_to_call" &> /dev/null; then
+            $function_to_call "$@"
+        else
+            echo "Function $function_to_call not found in $manager_script"
+        fi
+    else
+        echo "Manager script for $runtime_manager not found"
+    fi
+}
+
+
 # Define the rvm function
 rvm() {
-    case "$1" in
-        remove | uninstall)
-            remove "$@"
-            ;;
+    local command=$1
+    case $command in
         add | install)
-            add "$@"
+            # Map 'add' and 'install' to the same function
+            [ "$command" = "add" ] && command="install"
+            delegate_to_manager "$command" "$2" "${@:3}"
             ;;
-        all | showall)
-            all "$@"
+        remove | uninstall)
+            # Map 'remove' and 'uninstall' to the same function
+            [ "$command" = "remove" ] && command="uninstall"
+            delegate_to_manager "$command" "$2" "${@:3}"
             ;;
         prune)
-            prune "$@"
+            delegate_to_manager "$command" "$2" "${@:3}"
+            ;;
+        showall | all)
+            # Map 'showall' and 'all' to the same function
+            [ "$command" = "all" ] && command="showall"
+            delegate_to_manager "$command" "$2" "${@:3}"
             ;;
         removeall | uninstallall)
-            removeall "$@"
+            # Map 'removeall' and 'uninstallall' to the same function
+            [ "$command" = "uninstallall" ] && command="removeall"
+            delegate_to_manager "$command" "$2" "${@:3}"
             ;;
         update)
-            update "$@"
+            delegate_to_manager "$command" "$2" "${@:3}"
             ;;
-        set | use)
-            set "$@"
+        use | default)
+            # Map 'use' and 'default' to the same function
+            [ "$command" = "use" ] && command="default"
+            delegate_to_manager "$command" "$2" "${@:3}"
             ;;
         help)
-            echo "$@"
-            ;;          
+            # Directly handle the help command
+            help "$@"
+            ;;
+        version)
+            # Directly handle the version command
+            version "$@"
+            ;;
         *)
-            echo "Unrecognized command: $1"
+            echo "Unrecognized command: $command"
             ;;
     esac
 }
 
-# Function to handle 'remove' and 'uninstall' commands
-remove() {
-    if [ "$2" = "rvm" ]; then
-        remove_rvm
-    else
-        echo "Invalid argument for remove. Usage: 'rvm remove rvm' or 'rvm uninstall rvm'."
-    fi
-}
-
-
-add() {
-    # Implement the logic for 'add / install' command
-    echo "Add / Install command called with argument: $2"
-
-}
-
-all() {
-    # Implement the logic for 'all / showall' command
-    echo "All / showall command called with argument: $2"
-
-}
-
-prune() {
-    # Implement the logic for 'prune' command
-    echo "Prune command called with argument: $2"
-
-}
-
-removeall() {
-    # Implement the logic for 'removeall' command
-    echo "Removeall / Uninstallall command called with argument: $2"
-
-}
-
-update() {
-    # Implement the logic for 'update' command
-    echo "Update command called with argument: $2"
-
-}
-
-set() {
-    # Implement the logic for 'set' command
-    echo "Set / Use command called with argument: $2"
-
-}
-
+# Help function
 help() {
-    # Help function
-    echo "Hello, $2, what can i do for you?"
-
-}
-
-remove_rvm_settings() {
-    local profile_file=$1
-    if [ -f "$profile_file" ]; then
-        if command -v gsed &>/dev/null; then
-            # Use GNU sed if available (gsed is the name in some environments)
-            gsed -i '/#runner version manager settings/,/#end of runner version manager settings/d' "$profile_file"
-        else
-            # Fallback to regular sed, accommodating for both GNU and BSD sed syntax
-            sed -i'' -e '/#runner version manager settings/,/#end of runner version manager settings/d' "$profile_file"
-        fi
+    if [ -z "$2" ]; then
+        echo "Available commands: add, install, remove, uninstall, prune, showall, removeall, uninstallall, update, use, default, help"
+    else
+        echo "Hello, $2. What can I do for you?"
     fi
 }
 
-remove_rvm() {
-    echo "Removing RVM..."
-
-    # Remove the .rvm directory
-    rm -rf "${HOME}/.rvm"
-
-    # Remove lines related to rvm from the profile files
-    remove_rvm_settings "${HOME}/.profile"
-    
-    # Also check and remove from the shell-specific profile
-    SHELL_NAME=$(ps -p $$ -o comm=)
-    case "$SHELL_NAME" in
-        bash)
-            remove_rvm_settings "${HOME}/.bashrc"
-            ;;
-        zsh)
-            remove_rvm_settings "${HOME}/.zshrc"
-            ;;
-        ksh)
-            remove_rvm_settings "${HOME}/.kshrc"
-            ;;
-        fish)
-            remove_rvm_settings "${HOME}/.config/fish/config.fish"
-            ;;
-        *)
-            echo "Shell-specific profile not modified."
-            ;;
-    esac
-
-    echo "RVM has been removed. Please restart your terminal."
+# Help function
+version() {
+    echo "No version tracking yet"
 }
-
-
-
