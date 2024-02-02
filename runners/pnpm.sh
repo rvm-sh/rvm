@@ -4,7 +4,7 @@
 DEFAULT_PNPM_VERSION="8.15.1"
 ENABLE_AUTOCHECK="true"  # Control auto version check
 
-INSTALLED_VERSIONS="8.14.0 8.14.3 8.15.0 8.15.1"
+INSTALLED_VERSIONS="8.14.0 8.14.3 8.15.0"
 
 # Function to handle pnpm commands
 pnpm() {
@@ -13,14 +13,15 @@ pnpm() {
         # Proceed with version check
         if [ -f "package.json" ]; then
             # Check for jq
-            if ! command -v jq &> /dev/null; then
+            if ! command -v jq > /dev/null 2>&1; then
                 echo "jq not found, please install jq to use autocheck or disable autocheck."
                 use_pnpm_version "$DEFAULT_PNPM_VERSION" "$@"
                 return
             fi
             
             # Extract the pnpm version from package.json
-            local pnpm_version_specified=$(jq -r '.engines.pnpm // empty' package.json)
+            local pnpm_version_specified
+            pnpm_version_specified=$(jq -r '.engines.pnpm // empty' package.json)
 
             if [ -z "$pnpm_version_specified" ]; then
                 echo "No pnpm version specified in package.json. Using the default version."
@@ -29,7 +30,8 @@ pnpm() {
             fi
 
             # Determine the pnpm version to use
-            local version_to_use=$(determine_pnpm_version "$pnpm_version_specified")
+            local version_to_use
+            version_to_use=$(determine_pnpm_version "$pnpm_version_specified")
             use_pnpm_version "$version_to_use" "$@"
             return
         else
@@ -126,63 +128,77 @@ determine_pnpm_version() {
 }
 
 find_higher_version() {
-    local major_version=$(echo "$1" | cut -d'.' -f1)
-    local minor_version=$(echo "$1" | cut -d'.' -f2)
-    local patch_version=$(echo "$1" | cut -d'.' -f3)
+    local major_version
+    local minor_version
+    local patch_version
+    major_version=$(echo "$1" | cut -d'.' -f1)
+    minor_version=$(echo "$1" | cut -d'.' -f2)
+    patch_version=$(echo "$1" | cut -d'.' -f3)
 
     # Filter by major version
-    local matching_major_versions=$(filter_major_versions "$major_version")
+    local matching_major_versions
+    matching_major_versions="$(filter_major_versions "$major_version")"
     if [ -z "$matching_major_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
     # Filter by minor version
-    local matching_minor_versions=$(filter_minor_versions "$minor_version" "$matching_major_versions")
+    local matching_minor_versions
+    matching_minor_versions="$(filter_minor_versions "$minor_version" "$matching_major_versions")"
     if [ -z "$matching_minor_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
     # Filter for higher patch versions
-    local matching_patch_versions=$(filter_higher_patch_versions "$patch_version" "$matching_minor_versions")
+    local matching_patch_versions
+    matching_patch_versions="$(filter_higher_patch_versions "$patch_version" "$matching_minor_versions")"
     if [ -z "$matching_patch_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
-    highest_version=$(get_highest_version "$matching_patch_versions")
+    local highest_version
+    highest_version="$(get_highest_version "$matching_patch_versions")"
 
     echo "$highest_version"
 
 }
 
 find_higher_or_equal_version() {
-    local major_version=$(echo "$1" | cut -d'.' -f1)
-    local minor_version=$(echo "$1" | cut -d'.' -f2)
-    local patch_version=$(echo "$1" | cut -d'.' -f3)
+    local major_version
+    local minor_version
+    local patch_version
+    major_version="$(echo "$1" | cut -d'.' -f1)"
+    minor_version=$(echo "$1" | cut -d'.' -f2)
+    patch_version=$(echo "$1" | cut -d'.' -f3)
 
     # Filter by major version
-    local matching_major_versions=$(filter_major_versions "$major_version")
+    local matching_major_versions
+    matching_major_versions=$(filter_major_versions "$major_version")
     if [ -z "$matching_major_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
     # Filter by minor version
-    local matching_minor_versions=$(filter_minor_versions "$minor_version" "$matching_major_versions")
+    local matching_minor_versions
+    matching_minor_versions=$(filter_minor_versions "$minor_version" "$matching_major_versions")
     if [ -z "$matching_minor_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
     # Filter for higher patch versions
-    local matching_patch_versions=$(filter_equal_or_higher_patch_versions "$patch_version" "$matching_minor_versions")
+    local matching_patch_versions
+    matching_patch_versions=$(filter_equal_or_higher_patch_versions "$patch_version" "$matching_minor_versions")
     if [ -z "$matching_patch_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
+    local highest_version
     highest_version=$(get_highest_version "$matching_patch_versions")
 
     echo "$highest_version"
@@ -190,23 +206,28 @@ find_higher_or_equal_version() {
 }
 
 find_highest_patch_for_minor() {
-    local major_version=$(echo "$1" | cut -d'.' -f1)
-    local minor_version=$(echo "$1" | cut -d'.' -f2)
+    local major_version
+    local minor_version
+    major_version=$(echo "$1" | cut -d'.' -f1)
+    minor_version=$(echo "$1" | cut -d'.' -f2)
 
     # Filter by major version
-    local matching_major_versions=$(filter_major_versions "$major_version")
+    local matching_major_versions
+    matching_major_versions=$(filter_major_versions "$major_version")
     if [ -z "$matching_major_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
     # Filter by minor version
-    local matching_minor_versions=$(filter_minor_versions "$minor_version" "$matching_major_versions")
+    local matching_minor_versions
+    matching_minor_versions=$(filter_minor_versions "$minor_version" "$matching_major_versions")
     if [ -z "$matching_minor_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
+    local highest_version
     highest_version=$(get_highest_version "$matching_minor_versions")
 
     echo "$highest_version"
@@ -214,15 +235,18 @@ find_highest_patch_for_minor() {
 }
 
 find_highest_patch_for_major() {
-    local major_version=$(echo "$1" | cut -d'.' -f1)
+    local major_version
+    major_version=$(echo "$1" | cut -d'.' -f1)
 
     # Filter by major version
-    local matching_major_versions=$(filter_major_versions "$major_version")
+    local matching_major_versions
+    matching_major_versions=$(filter_major_versions "$major_version")
     if [ -z "$matching_major_versions" ]; then
         echo "No matching versions found for criteria specified"
         return 1 # Exit the function early
     fi
 
+    local highest_version
     highest_version=$(get_highest_version "$matching_major_versions")
 
     echo "$highest_version"
@@ -231,8 +255,10 @@ find_highest_patch_for_major() {
 
 ## Take in a list and a filter number 
 filter_major_versions() {
-    local major_version="$1"
-    local filtered_versions=""
+    local major_version
+    local filtered_versions
+
+    major_version="$1"
 
     for version in $INSTALLED_VERSIONS; do
         if [ "$(echo "$version" | cut -d'.' -f1)" = "$major_version" ]; then
@@ -246,10 +272,12 @@ filter_major_versions() {
 ## Take in a list and a filter number
 # Function to filter versions by minor version number
 filter_minor_versions() {
-    local minor_version="$1"
+    local minor_version
+    minor_version="$1"
     shift # Remove the minor version from the arguments
-    local versions="$@" # All remaining arguments are considered versions
-    local filtered_versions=""
+    local versions
+    versions="$*"
+    local filtered_versions
 
     for version in $versions; do
         # Extract the minor version part and compare
@@ -261,16 +289,18 @@ filter_minor_versions() {
     echo "$filtered_versions"
 }
 
+
 # Function to filter for patch versions strictly higher than a given base patch version
 filter_higher_patch_versions() {
     local base_patch="$1"
-    shift # Remove the minor version from the arguments
-    local filtered_major_versions="$@" # All remaining arguments are considered versions
+    shift # Remove the base patch version from the arguments
+    local versions="$*" # Concatenate all remaining arguments into a single string
     local higher_patches=""
 
-    for version in $filtered_major_versions; do
+    for version in $versions; do
         # Extract the patch number
-        local patch=$(echo "$version" | cut -d'.' -f3)
+        local patch
+        patch=$(echo "$version" | cut -d'.' -f3)
         if [ "$patch" -gt "$base_patch" ]; then
             higher_patches="$higher_patches $version"
         fi
@@ -279,16 +309,18 @@ filter_higher_patch_versions() {
     echo "$higher_patches"
 }
 
+
 # Function to filter for patch versions equal to or higher than a given base patch version
 filter_equal_or_higher_patch_versions() {
     local base_patch="$1"
-    shift # Remove the minor version from the arguments
-    local filtered_minor_versions="$@" # All remaining arguments are considered versions
+    shift # Remove the base patch version from the arguments
+    local versions="$*" # Concatenate all remaining arguments into a single string
     local equal_or_higher_patches=""
 
-    for version in $filtered_minor_versions; do
+    for version in $versions; do
         # Extract the patch number
-        local patch=$(echo "$version" | cut -d'.' -f3)
+        local patch
+        patch=$(echo "$version" | cut -d'.' -f3)
         if [ "$patch" -ge "$base_patch" ]; then
             equal_or_higher_patches="$equal_or_higher_patches $version"
         fi
@@ -297,10 +329,11 @@ filter_equal_or_higher_patch_versions() {
     echo "$equal_or_higher_patches"
 }
 
+
 get_highest_version() {
-    # Assuming versions are passed as a space-separated string
-    versions="$@"
+    # Concatenate all arguments into a single space-separated string
+    local versions="$*"
     
     # Sort versions and return the highest one
-    printf "%s\n" $versions | sed 's/\./-/g' | sort -t '-' -k 1,1n -k 2,2n -k 3,3n | sed 's/-/\./g' | tail -n 1
+    printf "%s\n" "$versions" | sed 's/\./-/g' | sort -t '-' -k 1,1n -k 2,2n -k 3,3n | sed 's/-/\./g' | tail -n 1
 }
