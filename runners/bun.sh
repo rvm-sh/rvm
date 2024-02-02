@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# Define the default and latest versions of pnpm
-DEFAULT_PNPM_VERSION="8.15.0"
+# Define the default and latest versions of bun
+DEFAULT_BUN_VERSION="1.0.25"
 ENABLE_AUTOCHECK="true"  # Control auto version check
 
-INSTALLED_VERSIONS="8.14.0 8.14.3 8.15.0"
+INSTALLED_VERSIONS="1.0.25"
 
-# Function to handle pnpm commands
-pnpm() {
+# Function to handle bun commands
+bun() {
     # Check if auto version check is enabled
     if [ "$ENABLE_AUTOCHECK" = "true" ]; then
         # Proceed with version check
@@ -15,36 +15,36 @@ pnpm() {
             # Check for jq
             if ! command -v jq > /dev/null 2>&1; then
                 echo "jq not found, please install jq to use autocheck or disable autocheck."
-                use_pnpm_version "$DEFAULT_PNPM_VERSION" "$@"
+                use_bun_version "$DEFAULT_BUN_VERSION" "$@"
                 return
             fi
             
-            # Extract the pnpm version from package.json
-            local pnpm_version_specified
-            pnpm_version_specified=$(jq -r '.engines.pnpm // empty' package.json)
+            # Extract the bun version from package.json
+            local bun_version_specified
+            bun_version_specified=$(jq -r '.engines.bun // empty' package.json)
 
-            if [ -z "$pnpm_version_specified" ]; then
-                echo "No pnpm version specified in package.json. Using the default version."
-                use_pnpm_version "$DEFAULT_PNPM_VERSION" "$@"
+            if [ -z "$bun_version_specified" ]; then
+                echo "No bun version specified in package.json. Using the default version."
+                use_bun_version "$DEFAULT_BUN_VERSION" "$@"
                 return
             fi
 
-            # Determine the pnpm version to use
+            # Determine the bun version to use
             local version_to_use
-            version_to_use=$(determine_pnpm_version "$pnpm_version_specified")
-            use_pnpm_version "$version_to_use" "$@"
+            version_to_use=$(determine_bun_version "$bun_version_specified")
+            use_bun_version "$version_to_use" "$@"
             return
         else
-            echo "package.json not found. Using the default pnpm version."
+            echo "package.json not found. Using the default bun version."
         fi
     fi
 
     # Fallback or if autocheck is disabled
-    use_pnpm_version "$DEFAULT_PNPM_VERSION" "$@"
+    use_bun_version "$DEFAULT_BUN_VERSION" "$@"
 }
 
-# Function to use a specific pnpm version
-use_pnpm_version() {
+# Function to use a specific bun version
+use_bun_version() {
     local version="$1"
     if [ "$version" = "not_found" ]; then
         echo "No matching version found for specified criteria. Exiting without defaulting to the default version."
@@ -52,19 +52,19 @@ use_pnpm_version() {
     fi
 
     shift  # Remove version from the arguments
-    local pnpm_executable="${HOME}/.pnpm/v${version}/pnpm"
+    local bun_executable="${HOME}/.bun/v${version}/bun"
 
-    if [ -f "$pnpm_executable" ]; then
-        echo "Using pnpm version: $version"
-        $pnpm_executable "$@"
+    if [ -f "$bun_executable" ]; then
+        echo "Using bun version: $version"
+        $bun_executable "$@"
     else
-        echo "pnpm version $version not found. Please install this version before running the command."
+        echo "bun version $version not found. Please install this version before running the command."
         return 1
     fi
 }
 
-# Function to determine the pnpm version to use based on the specification
-determine_pnpm_version() {
+# Function to determine the bun version to use based on the specification
+determine_bun_version() {
     local version_spec="$1"
     local base_version=""
     local determined_version=""
@@ -115,7 +115,7 @@ determine_pnpm_version() {
 
     else
         # If none of the above, use default
-        echo determined_version="$DEFAULT_PNPM_VERSION"
+        echo determined_version="$DEFAULT_BUN_VERSION"
         return
     fi
 
