@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# Define the default and latest versions of bun
-DEFAULT_BUN_VERSION=""
+# Define the default and latest versions of node
+DEFAULT_NODE_VERSION=""
 ENABLE_AUTOCHECK="false"  # Control auto version check
 
 INSTALLED_VERSIONS=""
 
-# Function to handle bun commands
-bun() {
+# Function to handle node commands
+node() {
     # Check if auto version check is enabled
     if [ "$ENABLE_AUTOCHECK" = "true" ]; then
         # Proceed with version check
@@ -15,36 +15,36 @@ bun() {
             # Check for jq
             if ! command -v jq > /dev/null 2>&1; then
                 echo "jq not found, please install jq to use autocheck or disable autocheck."
-                use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+                use_node_version "$DEFAULT_NODE_VERSION" "$@"
                 return
             fi
             
-            # Extract the bun version from package.json
-            local bun_version_specified
-            bun_version_specified=$(jq -r '.engines.bun // empty' package.json)
+            # Extract the node version from package.json
+            local node_version_specified
+            node_version_specified=$(jq -r '.engines.node // empty' package.json)
 
-            if [ -z "$bun_version_specified" ]; then
-                echo "No bun version specified in package.json. Using the default version."
-                use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+            if [ -z "$node_version_specified" ]; then
+                echo "No node version specified in package.json. Using the default version."
+                use_node_version "$DEFAULT_NODE_VERSION" "$@"
                 return
             fi
 
-            # Determine the bun version to use
+            # Determine the node version to use
             local version_to_use
-            version_to_use=$(determine_bun_version "$bun_version_specified")
-            use_bun_version "$version_to_use" "$@"
+            version_to_use=$(determine_node_version "$node_version_specified")
+            use_node_version "$version_to_use" "$@"
             return
         else
-            echo "package.json not found. Using the default bun version."
+            echo "package.json not found. Using the default node version."
         fi
     fi
 
     # Fallback or if autocheck is disabled
-    use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+    use_node_version "$DEFAULT_NODE_VERSION" "$@"
 }
 
-# Function to use a specific bun version
-use_bun_version() {
+# Function to use a specific node version
+use_node_version() {
     local version="$1"
     if [ "$version" = "not_found" ]; then
         echo "No matching version found for specified criteria. Exiting without defaulting to the default version."
@@ -52,19 +52,19 @@ use_bun_version() {
     fi
 
     shift  # Remove version from the arguments
-    local bun_executable="${HOME}/.bun/v${version}/bun"
+    local node_executable="${HOME}/.node/v${version}/bin/node"
 
-    if [ -f "$bun_executable" ]; then
-        echo "Using bun version: $version"
-        $bun_executable "$@"
+    if [ -f "$node_executable" ]; then
+        echo "Using node version: $version"
+        $node_executable "$@"
     else
-        echo "bun version $version not found. Please install this version before running the command."
+        echo "node version $version not found. Please install this version before running the command."
         return 1
     fi
 }
 
-# Function to determine the bun version to use based on the specification
-determine_bun_version() {
+# Function to determine the node version to use based on the specification
+determine_node_version() {
     local version_spec="$1"
     local base_version=""
     local determined_version=""
@@ -115,7 +115,7 @@ determine_bun_version() {
 
     else
         # If none of the above, use default
-        echo determined_version="$DEFAULT_BUN_VERSION"
+        echo determined_version="$DEFAULT_NODE_VERSION"
         return
     fi
 

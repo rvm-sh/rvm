@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# Define the default and latest versions of bun
-DEFAULT_BUN_VERSION=""
+# Define the default and latest versions of deno
+DEFAULT_DENO_VERSION=""
 ENABLE_AUTOCHECK="false"  # Control auto version check
 
 INSTALLED_VERSIONS=""
 
-# Function to handle bun commands
-bun() {
+# Function to handle deno commands
+deno() {
     # Check if auto version check is enabled
     if [ "$ENABLE_AUTOCHECK" = "true" ]; then
         # Proceed with version check
@@ -15,36 +15,36 @@ bun() {
             # Check for jq
             if ! command -v jq > /dev/null 2>&1; then
                 echo "jq not found, please install jq to use autocheck or disable autocheck."
-                use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+                use_deno_version "$DEFAULT_DENO_VERSION" "$@"
                 return
             fi
             
-            # Extract the bun version from package.json
-            local bun_version_specified
-            bun_version_specified=$(jq -r '.engines.bun // empty' package.json)
+            # Extract the deno version from package.json
+            local deno_version_specified
+            deno_version_specified=$(jq -r '.engines.deno // empty' package.json)
 
-            if [ -z "$bun_version_specified" ]; then
-                echo "No bun version specified in package.json. Using the default version."
-                use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+            if [ -z "$deno_version_specified" ]; then
+                echo "No deno version specified in package.json. Using the default version."
+                use_deno_version "$DEFAULT_DENO_VERSION" "$@"
                 return
             fi
 
-            # Determine the bun version to use
+            # Determine the deno version to use
             local version_to_use
-            version_to_use=$(determine_bun_version "$bun_version_specified")
-            use_bun_version "$version_to_use" "$@"
+            version_to_use=$(determine_deno_version "$deno_version_specified")
+            use_deno_version "$version_to_use" "$@"
             return
         else
-            echo "package.json not found. Using the default bun version."
+            echo "package.json not found. Using the default deno version."
         fi
     fi
 
     # Fallback or if autocheck is disabled
-    use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+    use_deno_version "$DEFAULT_DENO_VERSION" "$@"
 }
 
-# Function to use a specific bun version
-use_bun_version() {
+# Function to use a specific deno version
+use_deno_version() {
     local version="$1"
     if [ "$version" = "not_found" ]; then
         echo "No matching version found for specified criteria. Exiting without defaulting to the default version."
@@ -52,19 +52,19 @@ use_bun_version() {
     fi
 
     shift  # Remove version from the arguments
-    local bun_executable="${HOME}/.bun/v${version}/bun"
+    local deno_executable="${HOME}/.deno/v${version}/deno"
 
-    if [ -f "$bun_executable" ]; then
-        echo "Using bun version: $version"
-        $bun_executable "$@"
+    if [ -f "$deno_executable" ]; then
+        echo "Using deno version: $version"
+        $deno_executable "$@"
     else
-        echo "bun version $version not found. Please install this version before running the command."
+        echo "deno version $version not found. Please install this version before running the command."
         return 1
     fi
 }
 
-# Function to determine the bun version to use based on the specification
-determine_bun_version() {
+# Function to determine the deno version to use based on the specification
+determine_deno_version() {
     local version_spec="$1"
     local base_version=""
     local determined_version=""
@@ -115,7 +115,7 @@ determine_bun_version() {
 
     else
         # If none of the above, use default
-        echo determined_version="$DEFAULT_BUN_VERSION"
+        echo determined_version="$DEFAULT_DENO_VERSION"
         return
     fi
 

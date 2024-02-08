@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# Define the default and latest versions of bun
-DEFAULT_BUN_VERSION=""
+# Define the default and latest versions of npm
+DEFAULT_NPM_VERSION=""
 ENABLE_AUTOCHECK="false"  # Control auto version check
 
 INSTALLED_VERSIONS=""
 
-# Function to handle bun commands
-bun() {
+# Function to handle npm commands
+npm() {
     # Check if auto version check is enabled
     if [ "$ENABLE_AUTOCHECK" = "true" ]; then
         # Proceed with version check
@@ -15,36 +15,74 @@ bun() {
             # Check for jq
             if ! command -v jq > /dev/null 2>&1; then
                 echo "jq not found, please install jq to use autocheck or disable autocheck."
-                use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+                use_npm_version "$DEFAULT_NPM_VERSION" "$@"
                 return
             fi
             
-            # Extract the bun version from package.json
-            local bun_version_specified
-            bun_version_specified=$(jq -r '.engines.bun // empty' package.json)
+            # Extract the npm version from package.json
+            local npm_version_specified
+            npm_version_specified=$(jq -r '.engines.npm // empty' package.json)
 
-            if [ -z "$bun_version_specified" ]; then
-                echo "No bun version specified in package.json. Using the default version."
-                use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+            if [ -z "$npm_version_specified" ]; then
+                echo "No npm version specified in package.json. Using the default version."
+                use_npm_version "$DEFAULT_NPM_VERSION" "$@"
                 return
             fi
 
-            # Determine the bun version to use
+            # Determine the npm version to use
             local version_to_use
-            version_to_use=$(determine_bun_version "$bun_version_specified")
-            use_bun_version "$version_to_use" "$@"
+            version_to_use=$(determine_npm_version "$npm_version_specified")
+            use_npm_version "$version_to_use" "$@"
             return
         else
-            echo "package.json not found. Using the default bun version."
+            echo "package.json not found. Using the default npm version."
         fi
     fi
 
     # Fallback or if autocheck is disabled
-    use_bun_version "$DEFAULT_BUN_VERSION" "$@"
+    use_npm_version "$DEFAULT_NPM_VERSION" "$@"
 }
 
-# Function to use a specific bun version
-use_bun_version() {
+# Function to handle npx commands
+npx() {
+    # Check if auto version check is enabled
+    if [ "$ENABLE_AUTOCHECK" = "true" ]; then
+        # Proceed with version check
+        if [ -f "package.json" ]; then
+            # Check for jq
+            if ! command -v jq > /dev/null 2>&1; then
+                echo "jq not found, please install jq to use autocheck or disable autocheck."
+                use_npm_version "$DEFAULT_NPM_VERSION" "$@"
+                return
+            fi
+            
+            # Extract the npm version from package.json
+            local npm_version_specified
+            npm_version_specified=$(jq -r '.engines.npm // empty' package.json)
+
+            if [ -z "$npm_version_specified" ]; then
+                echo "No npm version specified in package.json. Using the default version."
+                use_npm_version "$DEFAULT_NPM_VERSION" "$@"
+                return
+            fi
+
+            # Determine the npm version to use
+            local version_to_use
+            version_to_use=$(determine_npm_version "$npm_version_specified")
+            use_npm_version "$version_to_use" "$@"
+            return
+        else
+            echo "package.json not found. Using the default npm version."
+        fi
+    fi
+
+    # Fallback or if autocheck is disabled
+    use_npm_version "$DEFAULT_NPM_VERSION" "$@"
+}
+
+
+# Function to use a specific npm version
+use_npm_version() {
     local version="$1"
     if [ "$version" = "not_found" ]; then
         echo "No matching version found for specified criteria. Exiting without defaulting to the default version."
@@ -52,19 +90,39 @@ use_bun_version() {
     fi
 
     shift  # Remove version from the arguments
-    local bun_executable="${HOME}/.bun/v${version}/bun"
+    local npm_executable="${HOME}/.npm/v${version}/bin/npm"
 
-    if [ -f "$bun_executable" ]; then
-        echo "Using bun version: $version"
-        $bun_executable "$@"
+    if [ -f "$npm_executable" ]; then
+        echo "Using npm version: $version"
+        $npm_executable "$@"
     else
-        echo "bun version $version not found. Please install this version before running the command."
+        echo "npm version $version not found. Please install this version before running the command."
         return 1
     fi
 }
 
-# Function to determine the bun version to use based on the specification
-determine_bun_version() {
+# Function to use a specific npx version
+use_npx_version() {
+    local version="$1"
+    if [ "$version" = "not_found" ]; then
+        echo "No matching version found for specified criteria. Exiting without defaulting to the default version."
+        return 1
+    fi
+
+    shift  # Remove version from the arguments
+    local npm_executable="${HOME}/.npm/v${version}/bin/npx"
+
+    if [ -f "$npm_executable" ]; then
+        echo "Using npm version: $version"
+        $npm_executable "$@"
+    else
+        echo "npm version $version not found. Please install this version before running the command."
+        return 1
+    fi
+}
+
+# Function to determine the npm version to use based on the specification
+determine_npm_version() {
     local version_spec="$1"
     local base_version=""
     local determined_version=""
@@ -115,7 +173,7 @@ determine_bun_version() {
 
     else
         # If none of the above, use default
-        echo determined_version="$DEFAULT_BUN_VERSION"
+        echo determined_version="$DEFAULT_NPM_VERSION"
         return
     fi
 

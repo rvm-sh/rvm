@@ -1,10 +1,10 @@
 #!/bin/sh
 
 # Define the default and latest versions of pnpm
-DEFAULT_PNPM_VERSION="8.15.0"
-ENABLE_AUTOCHECK="true"  # Control auto version check
+DEFAULT_PNPM_VERSION=""
+ENABLE_AUTOCHECK="false"  # Control auto version check
 
-INSTALLED_VERSIONS="8.14.0 8.14.3 8.15.0"
+INSTALLED_VERSIONS=""
 
 # Function to handle pnpm commands
 pnpm() {
