@@ -70,6 +70,12 @@ or even
 rvm install pnpm@8.14.0
 ```
 
+### Upgrade a runner
+Installs latest version of the runner (of the same major version) and sets this new version as default
+```
+rvm upgrade pnpm
+```
+
 ### Set a specific runner version as default
 Use either `set` or `use`
 ```
@@ -82,7 +88,7 @@ rvm use pnpm@18.14.0
 
 ### Show version of default runner
 ```
-pnpm -v
+rvm show pnpm
 ```
 
 ### Using the runner
@@ -133,6 +139,10 @@ rvm remove rvm
 ```
 rvm update rvm
 ```
+
+
+Issues:
+If you have nvm installed previously, the nvm env variables are not removed automatically on uninstall. This will break the functionality of rvm when /usr/bin/env is used in any script. Currently, a manual process is required to clean up any of these variables.
 
 
 

@@ -2,14 +2,14 @@
 
 # Define the default and latest versions of node
 DEFAULT_NODE_VERSION=""
-ENABLE_AUTOCHECK="false"  # Control auto version check
+ENABLE_NODE_AUTOCHECK="false"  # Control auto version check
 
 INSTALLED_VERSIONS=""
 
 # Function to handle node commands
 node() {
     # Check if auto version check is enabled
-    if [ "$ENABLE_AUTOCHECK" = "true" ]; then
+    if [ "$ENABLE_NODE_AUTOCHECK" = "true" ]; then
         # Proceed with version check
         if [ -f "package.json" ]; then
             # Check for jq
