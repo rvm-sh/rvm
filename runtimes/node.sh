@@ -160,21 +160,22 @@ get_latest_major_minor_version() {
     local url="https://nodejs.org/download/release/index.tab"
 
     # Fetch and parse the index.tab for the latest patch version of the major.minor version
-    local version_info=$(wget -qO- "$url" | awk -v ver="$major_minor_version" -v os="$os" -v arch="$arch" -F'\t' '
-    $1 ~ "^v" ver && $2 ~ os && $3 ~ arch { print $1 }
+    local version_info=$(wget -qO- "$url" | awk -v ver="$major_minor_version" -F'\t' '
+    $1 ~ "^v" ver { print $1 }
     ' | sort -V | tail -n1)
 
     if [ -z "$version_info" ]; then
-        echo "Failed to find the latest Node.js version for $os $arch with major.minor version $major_minor_version"
+        echo "Failed to find the latest Node.js version with major.minor version $major_minor_version"
         return 1
     fi
 
     local version=$(echo "$version_info" | grep -Eo 'v[0-9.]+')
     local file_name="node-${version}-${os}-${arch}.tar.gz"
-    local link="https://nodejs.org/download/release/v${version}/${file_name}"
+    local link="https://nodejs.org/download/release/${version}/${file_name}"
 
     echo "$version $link"
 }
+
 
 
 get_latest_lts_version() {
