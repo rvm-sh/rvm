@@ -7,33 +7,17 @@ ALL_AVAILABLE_NODE_VERSIONS=""
 
 install() {
     # Check for at least one argument
-    echo "Args: $@"
-    if [ $# -lt 1 ]; then
-    cat <<EOF
-    To use this command, you can type in:
-    Latest(usually the current LTS, as specified by node):
-    rvm install node latest
-
-    Latest of major version:
-    rvm install node 18
-
-    Latest of major & minor version:
-    rvm install node 18.10
-
-    Specific version:
-    rvm install node 18.10.11
-
-    Latest of specific LTS:
-    rvm install node latest-iron
-    rvm install node latest-hydrogen
-EOF
-    return 1
-fi
+    if [ -z "$1" ]; then
+        help_install
+        return 1
+    fi
 
 
     # Determine os and arch
     local os=$(uname -s | tr '[:upper:]' '[:lower:]')
+    echo "OS detected: ${os}"
     local arch=$(uname -m)
+    echo "Arch detected: ${arch}"
     case "$arch" in
         x86_64) arch="x64" ;;
         aarch64) arch="arm64" ;;
@@ -42,12 +26,14 @@ fi
     # determine the version to install
     local requested_version="$1"
     if [[ $requested_version == latest ]]; then
+        
         read -r install_version link <<< $(get_latest_node_version "$os" "$arch")
 
         if [ -z "$install_version" ] || [ -z "$link" ]; then
             echo "Failed to find the latest Node.js version for $os $arch"
             return 1
         fi
+        echo "Latest version requested. Installing node ${install_version}"
     elif [[ $requested_version =~ ^[0-9]+$ ]]; then
         read -r install_version link <<< $(get_latest_major_version $requested_version $os $arch)
 
@@ -70,24 +56,69 @@ fi
 
     elif [[ $requested_version =~ ^latest- ]]; then
         read -r install_version link <<< $(get_latest_lts_version $requested_version $os $arch)
+
+        echo "Latest requested version for ${requested_version} determined: ${install_version}"
     else
         echo "Invalid version specification: $requested_version"
         return 1
     fi
 
-    #test to see if its working so far
-    echo "$install_version $link"
+    # Check if .node folder exists
+    if [ ! -d "$HOME/.node" ]; then
+        mkdir -p "$HOME/.node"
+        echo "Created .node folder in your home directory."
+    fi
 
 
-    # check if .node folder is already available in the home folder
+    # Check if folder named v<version> exists
+    echo "Checking if version already exists..."
+    version_folder="$HOME/.node/${install_version}"
+        if [ -d "$version_folder" ]; then
+        echo "Node.js version $install_version is already installed. To reinstall, remove this version first"
+        return 1
+    fi
 
-    # check if version already installed, reply with message if already installed and exit
 
-    # download the file into the .node folder
+    # Download the file using wget
+    echo "Downloading file..."
+    download_dir="$HOME/.node/downloads"
+    if [ ! -d "$download_dir" ]; then
+        mkdir -p "$download_dir"
+    fi
+    
+    wget -qO "$download_dir/node.tar.gz" "$link"
+    if [ $? -ne 0 ]; then
+        echo "Failed to download the file."
+        return 1
+    fi
+
+    echo "Download complete. Installing version."
+    mkdir -p "$version_folder"
 
     # unzip the file, rename the folder to its version (ie, v20.11.0)
+    # Use tar to extract with custom directory name
+    tar -xzf "$download_dir/node.tar.gz" -C "$version_folder" --strip-components=1
 
-    # create bash settings to point node to this path
+
+    #Delete the downloaded file
+    echo "Install complete. Clearing up download file"
+    rm -f "$download_dir/node.tar.gz"
+
+    # Add Node.js path to PATH variable
+    echo "Updating bash PATH settings"
+    # Check for existing line and either update or create it
+    if grep -q "export PATH=\$HOME/.node/v[^:]*/bin:\$PATH" ~/.bashrc; then
+    # Update existing line
+        sed -i "s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=\$HOME/.node/$install_version/bin:\$PATH|" ~/.bashrc
+    else
+    # Create new line with comments
+        echo "# START RVM NODE PATH" >> ~/.bashrc
+        echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> ~/.bashrc
+        echo "# END RVM NODE PATH" >> ~/.bashrc
+    fi
+
+
+    source ~/.bashrc
 
 }
 
@@ -246,10 +277,10 @@ use () {
 
 }
 
-help () {
+help_install () {
     cat <<EOF
-    To use this command, you can type in:
-    Latest(usually the current LTS, as specified by node):
+To use this command, you can type in:
+    Latest(as specified by node):
     rvm install node latest
 
     Latest of major version:
