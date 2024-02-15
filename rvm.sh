@@ -46,7 +46,7 @@ rvm() {
             # Map 'showall' and 'all' to the same function
             # Show all installed versions of a runtime
             [ "$command" = "all" ] && command="showall"
-            delegate_to_manager "$command" "$2" "$@"
+            delegate_to_manager "$command" "$2" "${@:3}"
             ;;
         removeall | uninstallall)
             # Map 'removeall' and 'uninstallall' to the same function
@@ -60,13 +60,12 @@ rvm() {
             ;;
         use)
             # Temporarily set a specific node version
-            [ "$command" = "use" ] && command="default"
             delegate_to_manager "$command" "$2" "${@:3}"
             ;;
         set | default)
             # Map 'set' and 'default' to the same function
             # Set default version of runtime
-            [ "$command" = "use" ] && command="default"
+            [ "$command" = "default" ] && command="set"
             delegate_to_manager "$command" "$2" "${@:3}"
             ;;
         help)

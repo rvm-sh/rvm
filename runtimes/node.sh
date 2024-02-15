@@ -379,39 +379,36 @@ showall() {
             return 0
         fi
 
-        # Check if user specified a filter
-        if [[ $# -gt 2 ]]; then
-          # Validate argument as a number
-          if [[ ! "$2" =~ ^[0-9]+$ ]]; then
-            echo "Invalid argument. Usage: rvm showall node available [major_version]"
-            return 1
-          fi
-          
-          # Filter versions based on major version
-          filtered_versions=()
-          for version in $versions; do
+        # Initialize filtered_versions array
+        declare -a filtered_versions
+
+        # Check if user specified a major version filter
+        if [[ $# -gt 1 && "$2" =~ ^[0-9]+$ ]]; then
+        # Filter versions based on major version
+        for version in $versions; do
             major_version="${version%%.*}"
             if [[ "$major_version" == "$2" ]]; then
-              filtered_versions+=("$version")
+            filtered_versions+=("$version")
             fi
-          done
-          
-          # Handle no matching versions
-          if [[ -z "${filtered_versions[@]}" ]]; then
+        done
+
+        # Handle no matching versions
+        if [[ ${#filtered_versions[@]} -eq 0 ]]; then
             echo "No Node.js versions available with major version $2."
             return 0
-          fi
-          
-          # Print filtered versions
-          echo "Available Node.js versions with major version $2:"
-          for version in "${filtered_versions[@]}"; do
+        fi
+
+        # Print filtered versions
+        echo "Available Node.js versions with major version $2:"
+        for version in "${filtered_versions[@]}"; do
             echo "  - $version"
-          done
+        done
         else
-          # No filter, print all available versions
-          for version in $versions; do
-            echo "$version"
-          done
+        # No specific major version filter provided, print all available versions
+        echo "All available Node.js versions:"
+        for version in $versions; do
+            echo "  - $version"
+        done
         fi
         ;;
     *)
@@ -423,29 +420,155 @@ showall() {
 
 
 
-uninstallall() {
-    echo "Function not implemented yet"
+removeall() {
+    echo "Uninstalling all Node.js versions..."
 
+    # Delete the .node folder
+    if [ -d "$HOME/.node" ]; then
+        echo "Removing the .node folder..."
+        rm -rf "$HOME/.node"
+        echo ".node folder removed successfully."
+    else
+        echo "No .node folder found. Skipping removal."
+    fi
+
+    # Delete the setting in the .bashrc file
+    if grep -q '# START RVM NODE PATH' ~/.bashrc; then
+        echo "Removing Node.js path settings from .bashrc..."
+        sed -i '/# START RVM NODE PATH/,/# END RVM NODE PATH/d' ~/.bashrc
+        echo "Node.js path settings removed from .bashrc."
+    else
+        echo "Node.js path settings not found in .bashrc. Skipping removal."
+    fi
+
+    echo "All Node.js versions and settings have been uninstalled successfully."
 }
 
 update() {
-    echo "Function not implemented yet"
-    # Should accept: 
-    # rvm update node
-    # rvm update node 18
-    # rvm update node 18.10
-    # rvm update latest
-    # rvm update latest-hyrdrogen
-    # rvm update latest-iron
+    # Check for at least one argument
+    if [ -z "$1" ]; then
+        help_update
+        return 1
+    fi
 
-    # Only the first one requires handling, the rest can be sent directly to install
+    case "$1" in
+        current)
+            # Extract the current default Node.js version from PATH
+            current_version=$(echo $PATH | grep -oP "\.node/v\K[0-9]+(?=\.[0-9]+/[0-9]+/bin)")
+            if [ -z "$current_version" ]; then
+                echo "No default Node.js version found in PATH. Consider specifying a version to update."
+                return 1
+            fi
 
+            # Call install function with the major version of the current default Node.js version
+            echo "Updating Node.js within the major version line: $current_version"
+            install "$current_version"
+            ;;
+        latest)
+            # Directly call install with 'latest'
+            install latest
+            ;;
+        latest-*)
+            # Handle LTS versions update: latest-hydrogen, latest-iron, etc.
+            install "$1"
+            ;;
+        *)
+            # Handle specific version updates: node 18, node 18.10, etc.
+            install "$1"
+            ;;
+    esac
 }
 
-use () {
-    echo "Function not implemented yet"
+use() {
+    if [ -z "$1" ]; then
+        help_use
+        return 1
+    fi
 
+    local requested_version="$1"
+    local version_folder=""
+    local match_version=""
+
+    # Handle different version specifications
+    if [[ "$requested_version" =~ ^[0-9]+$ ]]; then
+        # Major version: find the latest installed version of this major
+        match_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v${requested_version}.*" | sort -V | tail -n1)
+    elif [[ "$requested_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        # Major.minor version: find the latest installed version of this major.minor
+        match_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v${requested_version}.*" | sort -V | tail -n1)
+    elif [[ "$requested_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        # Specific version: use this specific version
+        match_version="$HOME/.node/v${requested_version}"
+    fi
+
+    if [ -z "$match_version" ] || [ ! -d "$match_version" ]; then
+        echo "Node.js version matching '$requested_version' is not installed."
+        return 1
+    fi
+
+    version_folder=$(basename "$match_version")
+
+    # Construct the path to the Node.js binaries for the matched version
+    local node_path="$HOME/.node/$version_folder/bin"
+
+    # Add the matched Node.js version to the beginning of the PATH for the current session
+    PATH="$node_path:$PATH"
+
+    echo "Using Node.js $version_folder. This change is temporary and will reset after the terminal session ends."
+    # Optionally, you can display the version being used by executing 'node -v'
+    node -v
 }
+
+set() {
+    if [ -z "$1" ]; then
+        help_set
+        return 1
+    fi
+
+    local requested_version="$1"
+    local version_folder=""
+    local match_version=""
+
+    # Handle different version specifications
+    if [[ "$requested_version" =~ ^[0-9]+$ ]]; then
+        # Major version: find the latest installed version of this major
+        match_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v${requested_version}.*" | sort -V | tail -n1)
+    elif [[ "$requested_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+        # Major.minor version: find the latest installed version of this major.minor
+        match_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v${requested_version}.*" | sort -V | tail -n1)
+    elif [[ "$requested_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        # Specific version: use this specific version
+        match_version="$HOME/.node/v${requested_version}"
+    fi
+
+    if [ -z "$match_version" ] || [ ! -d "$match_version" ]; then
+        echo "Node.js version matching '$requested_version' is not installed."
+        return 1
+    fi
+
+    version_folder=$(basename "$match_version")
+
+    # Construct the path to the Node.js binaries for the matched version
+    local node_path="$match_version/bin"
+
+    # Check if the .bashrc already contains Node path settings and replace them
+    if grep -q '# START RVM NODE PATH' ~/.bashrc; then
+        # The .bashrc contains existing Node.js path settings; replace them
+        sed -i "/# START RVM NODE PATH/,/# END RVM NODE PATH/{s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=$node_path:\$PATH|}" ~/.bashrc
+    else
+        # The .bashrc does not contain Node.js path settings; add them
+        echo "# START RVM NODE PATH" >> ~/.bashrc
+        echo "export PATH=$node_path:\$PATH" >> ~/.bashrc
+        echo "# END RVM NODE PATH" >> ~/.bashrc
+    fi
+
+    source ~/.bashrc
+
+    echo "Node.js $version_folder has been set as your default node version"
+}
+
+
+
 
 help_install () {
     cat <<EOF
@@ -480,6 +603,76 @@ To use this command, you can type in:
 
     Show all available major version at nodejs repository for installation
     rvm showall node available 18 
+EOF
+
+}
+
+help_update () {
+    cat <<EOF
+To use this command, you can type in:
+    Update current default version(with latest of the same major version)
+    rvm update node current
+
+    Update the latest version of node (as per the nodejs website)
+    rvm update node latest
+
+    Update the latest version of an lts
+    rvm update node latest-hydrogen
+    rvm update node latest-iron
+
+    Update a specific major / minor version of node
+    rvm update node 18
+    rvm update node 18.10
+
+    The update function will call the install function.
+    If a version does not exist, it will proceed to install it
+
+    Note that on completion, the path to the version will be set to the new installed version
+EOF
+
+}
+
+help_use () {
+    cat <<EOF
+    This command sets a specific specified version temporarily.
+    The default version will revert back to the one set in your terminal settings file once you restart your terminal
+
+    To change your default permanetly, call the rvm set node <version>
+
+    To use this command, you can type in:
+    Latest installed of major version
+    rvm use node 18
+
+    Latest installed of major/minor version
+    rvm use 18.10
+
+    Specific version
+    rvm use 18.10.0
+
+    rvm currently does not track lts versions locally, so it does not know which
+    are lts versions and which aren't
+EOF
+
+}
+
+help_set () {
+    cat <<EOF
+    This command sets the default version in your system.
+
+    To change your default temporarily, call the rvm use node <version>
+
+    To use this command, you can type in:
+    Latest installed of major version
+    rvm set node 18
+
+    Latest installed of major/minor version
+    rvm set 18.10
+
+    Specific version
+    rvm set 18.10.0
+
+    rvm currently does not track lts versions locally, so it does not know which
+    are lts versions and which aren't
 EOF
 
 }
