@@ -268,6 +268,8 @@ uninstall() {
         return 1
     fi
 
+    
+
     # Check if the uninstalled version was set in PATH
     current_path=$(echo $PATH | grep -oP "/.node/v\K[^:]*(?=/bin)")
     echo "Current path:#${current_path}#"
@@ -294,18 +296,132 @@ uninstall() {
         echo "Version does not match path, no changes to PATH settings"
     fi
 
+    # Unset the version path from PATH
+    PATH="${PATH%%:$HOME/.node/$version/bin}"
+    export PATH
+
+    source ~/.bashrc
+
     echo "Node.js version $version uninstalled successfully."
 }
 
 prune() {
-    echo "Function not implemented yet"
+    echo "Function prune not implemented yet"
+#   # Define variables
+#   current_version=$(node -v | cut -d' ' -f1)  # Get the currently installed version
+#   version_folder="$HOME/.node/v$current_version"  # Folder path for current version
 
+#   # Check if there are any versions installed
+#   if [ ! -d "$version_folder" ]; then
+#     echo "No Node.js versions are installed."
+#     return 0
+#   fi
+
+#   # Find all installed versions excluding the current one
+#   older_versions=$(find "$HOME/.node" -maxdepth 1 -type d -name "v*" | grep -vE "^$version_folder$")
+
+#   # Check if any older versions exist
+#   if [[ -z "$older_versions" ]]; then
+#     echo "No Node.js versions older than $current_version found."
+#     return 0
+#   fi
+
+#   # Confirm removal before proceeding
+#   echo "The following Node.js versions will be removed:"
+#   echo "$older_versions"
+#   read -p "Are you sure you want to proceed? (y/N) " answer
+#   if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
+#     echo "Aborting prune operation."
+#     return 0
+#   fi
+
+#   # Remove each older version folder
+#   for version_folder in $older_versions; do
+#     echo "Removing $version_folder"
+#     rm -rf "$version_folder"
+#     if [ $? -ne 0 ]; then
+#       echo "Error removing $version_folder."
+#       return 1
+#     fi
+#   done
+
+#   echo "Successfully pruned older Node.js versions."
 }
 
 showall() {
-    echo "Function not implemented yet"
+  # Accept and validate the argument
+  case "$1" in
+    installed)
+        type -t rvm >/dev/null && versions=$(find "$HOME/.node" -maxdepth 1 -type d -name "v*")
+        # Check if any versions were found
+        if [[ -z "$versions" ]]; then
+            echo "No Node.js versions are installed."
+            return 0
+        fi
+        # Print each version with the corresponding node command
+        echo "These are all the node versions installed"
+        for version_folder in $versions; do
+            version=$(basename "$version_folder")
+            version=$(echo "$version" | cut -d'v' -f2-)
 
+            echo "Version: $version"
+            echo "  Command to set temporarily: rvm use node $version"
+            echo "  Command to set as default: rvm set node $version"
+        done
+        ;;
+    available)
+        # Download the index file and capture versions
+        versions=$(wget -q -O - https://nodejs.org/download/release/index.tab | grep -Eo '^v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
+
+        # Check if any versions were found
+        if [[ -z "$versions" ]]; then
+            echo "No Node.js versions available were found from nodejs.org. Check that access to the web is not restricted / affected."
+            return 0
+        fi
+
+        # Check if user specified a filter
+        if [[ $# -gt 2 ]]; then
+          # Validate argument as a number
+          if [[ ! "$2" =~ ^[0-9]+$ ]]; then
+            echo "Invalid argument. Usage: rvm showall node available [major_version]"
+            return 1
+          fi
+          
+          # Filter versions based on major version
+          filtered_versions=()
+          for version in $versions; do
+            major_version="${version%%.*}"
+            if [[ "$major_version" == "$2" ]]; then
+              filtered_versions+=("$version")
+            fi
+          done
+          
+          # Handle no matching versions
+          if [[ -z "${filtered_versions[@]}" ]]; then
+            echo "No Node.js versions available with major version $2."
+            return 0
+          fi
+          
+          # Print filtered versions
+          echo "Available Node.js versions with major version $2:"
+          for version in "${filtered_versions[@]}"; do
+            echo "  - $version"
+          done
+        else
+          # No filter, print all available versions
+          for version in $versions; do
+            echo "$version"
+          done
+        fi
+        ;;
+    *)
+      help_showall
+      return 1
+      ;;
+  esac
 }
+
+
 
 uninstallall() {
     echo "Function not implemented yet"
@@ -349,6 +465,21 @@ To use this command, you can type in:
     Latest of specific LTS:
     rvm install node latest-iron
     rvm install node latest-hydrogen
+EOF
+
+}
+
+help_showall () {
+    cat <<EOF
+To use this command, you can type in:
+    Show all installed
+    rvm showall node installed
+
+    Show all available at nodejs repository for installation
+    rvm showall available
+
+    Show all available major version at nodejs repository for installation
+    rvm showall node available 18 
 EOF
 
 }

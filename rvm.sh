@@ -11,8 +11,8 @@ delegate_to_manager() {
     if [ -f "$manager_script" ]; then
         . "$manager_script"
         if command -v "$function_to_call" &> /dev/null; then
-            echo "Calling $function_to_call $3"
-            $function_to_call "$@"
+            echo "Calling $function_to_call $3 $4"
+            $function_to_call "$3" "$4"
         else
             echo "Function $function_to_call not found in $manager_script"
         fi
@@ -46,7 +46,7 @@ rvm() {
             # Map 'showall' and 'all' to the same function
             # Show all installed versions of a runtime
             [ "$command" = "all" ] && command="showall"
-            delegate_to_manager "$command" "$2" "${@:3}"
+            delegate_to_manager "$command" "$2" "$@"
             ;;
         removeall | uninstallall)
             # Map 'removeall' and 'uninstallall' to the same function
