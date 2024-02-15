@@ -306,47 +306,61 @@ uninstall() {
 }
 
 prune() {
-    echo "Function prune not implemented yet"
-#   # Define variables
-#   current_version=$(node -v | cut -d' ' -f1)  # Get the currently installed version
-#   version_folder="$HOME/.node/v$current_version"  # Folder path for current version
+    if [ -z "$1" ]; then
+        echo "Usage: rvm prune node [version]"
+        echo "version can be a major version (e.g., 18), a major.minor version (e.g., 18.10), or a specific version (e.g., 18.10.1)"
+        return 1
+    fi
 
-#   # Check if there are any versions installed
-#   if [ ! -d "$version_folder" ]; then
-#     echo "No Node.js versions are installed."
-#     return 0
-#   fi
+    local requested_version="$1"
+    local pruned_version=""
+    local available_versions=()
+    local default_version=""
+    local new_default_version=""
 
-#   # Find all installed versions excluding the current one
-#   older_versions=$(find "$HOME/.node" -maxdepth 1 -type d -name "v*" | grep -vE "^$version_folder$")
+    # List all installed versions
+    for dir in "$HOME/.node"/v*; do
+        if [ -d "$dir" ]; then
+            available_versions+=("$(basename "$dir")")
+        fi
+    done
 
-#   # Check if any older versions exist
-#   if [[ -z "$older_versions" ]]; then
-#     echo "No Node.js versions older than $current_version found."
-#     return 0
-#   fi
+    # Determine the default version from .bashrc if set
+    if grep -q '# START RVM NODE PATH' ~/.bashrc; then
+        default_version=$(grep 'export PATH=$HOME/.node/' ~/.bashrc | grep -o 'v[0-9.]\+')
+    fi
 
-#   # Confirm removal before proceeding
-#   echo "The following Node.js versions will be removed:"
-#   echo "$older_versions"
-#   read -p "Are you sure you want to proceed? (y/N) " answer
-#   if [[ "$answer" != "y" && "$answer" != "Y" ]]; then
-#     echo "Aborting prune operation."
-#     return 0
-#   fi
+    # Prune older versions
+    for version in "${available_versions[@]}"; do
+        if [[ "$version" < "v${requested_version}" ]]; then
+            echo "Removing $version..."
+            rm -rf "$HOME/.node/$version"
+            pruned_version="$version"
+        fi
+    done
 
-#   # Remove each older version folder
-#   for version_folder in $older_versions; do
-#     echo "Removing $version_folder"
-#     rm -rf "$version_folder"
-#     if [ $? -ne 0 ]; then
-#       echo "Error removing $version_folder."
-#       return 1
-#     fi
-#   done
+    # If the default version was pruned, set a new default version
+    if [[ ! -z "$pruned_version" && "$default_version" == "$pruned_version" ]]; then
+        # Find the latest version as new default
+        new_default_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v*" | sort -V | tail -n1 | xargs basename)
+        
+        if [[ ! -z "$new_default_version" ]]; then
+            local node_path="$HOME/.node/$new_default_version/bin"
+            # Update .bashrc with new default version
+            if grep -q '# START RVM NODE PATH' ~/.bashrc; then
+                sed -i "/# START RVM NODE PATH/,/# END RVM NODE PATH/{s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=$node_path:\$PATH|}" ~/.bashrc
+            fi
+            echo "Default Node.js version updated to $new_default_version"
+        fi
+    elif [[ -z "$pruned_version" ]]; then
+        echo "No versions were pruned."
+    else
+        echo "Node.js versions older than $requested_version were removed."
+    fi
 
-#   echo "Successfully pruned older Node.js versions."
+    source ~/.bashrc
 }
+
 
 showall() {
   # Accept and validate the argument
