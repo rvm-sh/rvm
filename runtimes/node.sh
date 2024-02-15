@@ -1,10 +1,5 @@
 #!/bin/sh
 
-# Define the default and latest versions of node
-DEFAULT_NODE_VERSION=""
-INSTALLED_VERSIONS=""
-ALL_AVAILABLE_NODE_VERSIONS=""
-
 install() {
     # Check for at least one argument
     if [ -z "$1" ]; then
@@ -63,63 +58,7 @@ install() {
         return 1
     fi
 
-    # Check if .node folder exists
-    if [ ! -d "$HOME/.node" ]; then
-        mkdir -p "$HOME/.node"
-        echo "Created .node folder in your home directory."
-    fi
-
-
-    # Check if folder named v<version> exists
-    echo "Checking if version already exists..."
-    version_folder="$HOME/.node/${install_version}"
-        if [ -d "$version_folder" ]; then
-        echo "Node.js version $install_version is already installed. To reinstall, remove this version first"
-        return 1
-    fi
-
-
-    # Download the file using wget
-    echo "Downloading file..."
-    download_dir="$HOME/.node/downloads"
-    if [ ! -d "$download_dir" ]; then
-        mkdir -p "$download_dir"
-    fi
-    
-    wget -qO "$download_dir/node.tar.gz" "$link"
-    if [ $? -ne 0 ]; then
-        echo "Failed to download the file."
-        return 1
-    fi
-
-    echo "Download complete. Installing version."
-    mkdir -p "$version_folder"
-
-    # unzip the file, rename the folder to its version (ie, v20.11.0)
-    # Use tar to extract with custom directory name
-    tar -xzf "$download_dir/node.tar.gz" -C "$version_folder" --strip-components=1
-
-
-    #Delete the downloaded file
-    echo "Install complete. Clearing up download file"
-    rm -f "$download_dir/node.tar.gz"
-
-    # Add Node.js path to PATH variable
-    echo "Updating bash PATH settings"
-    # Check for existing line and either update or create it
-    if grep -q "export PATH=\$HOME/.node/v[^:]*/bin:\$PATH" ~/.bashrc; then
-    # Update existing line
-        sed -i "s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=\$HOME/.node/$install_version/bin:\$PATH|" ~/.bashrc
-    else
-    # Create new line with comments
-        echo "# START RVM NODE PATH" >> ~/.bashrc
-        echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> ~/.bashrc
-        echo "# END RVM NODE PATH" >> ~/.bashrc
-    fi
-
-
-    source ~/.bashrc
-
+    install_specific_version $install_version $link
 }
 
 get_latest_node_version() {
@@ -242,14 +181,120 @@ get_latest_lts_version() {
 
 
 # this is the final function call for install
-# where we al already determined the exact version we want
-install_specific() {
-    echo "Function not implemented yet"
+# where we already determined the exact version we want
+install_specific_version() {
+    install_version=$1 
+    link=$2
+
+    # Check if .node folder exists
+    if [ ! -d "$HOME/.node" ]; then
+        mkdir -p "$HOME/.node"
+        echo "Created .node folder in your home directory."
+    fi
+
+
+    # Check if folder named v<version> exists
+    echo "Checking if version already exists..."
+    version_folder="$HOME/.node/${install_version}"
+        if [ -d "$version_folder" ]; then
+        echo "Node.js version $install_version is already installed. To reinstall, remove this version first"
+        return 1
+    fi
+
+
+    # Download the file using wget
+    echo "Downloading file..."
+    download_dir="$HOME/.node/downloads"
+    if [ ! -d "$download_dir" ]; then
+        mkdir -p "$download_dir"
+    fi
+    
+    wget -qO "$download_dir/node.tar.gz" "$link"
+    if [ $? -ne 0 ]; then
+        echo "Failed to download the file."
+        return 1
+    fi
+
+    echo "Download complete. Installing version."
+    mkdir -p "$version_folder"
+
+    # unzip the file, rename the folder to its version (ie, v20.11.0)
+    # Use tar to extract with custom directory name
+    tar -xzf "$download_dir/node.tar.gz" -C "$version_folder" --strip-components=1
+
+
+    #Delete the downloaded file
+    echo "Install complete. Clearing up download file"
+    rm -f "$download_dir/node.tar.gz"
+
+    # Add Node.js path to PATH variable
+    echo "Updating bash PATH settings"
+    # Check for existing line and either update or create it
+    if grep -q "export PATH=\$HOME/.node/v[^:]*/bin:\$PATH" ~/.bashrc; then
+    # Update existing line
+        sed -i "s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=\$HOME/.node/$install_version/bin:\$PATH|" ~/.bashrc
+    else
+    # Create new line with comments
+        echo "# START RVM NODE PATH" >> ~/.bashrc
+        echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> ~/.bashrc
+        echo "# END RVM NODE PATH" >> ~/.bashrc
+    fi
+
+    # Update default version if applicable
+    if [[ "$install_version" == "$(get_latest_node_version "$os" "$arch")" ]]; then
+        DEFAULT_NODE_VERSION="$install_version"
+        echo "Setting default Node.js version to: $DEFAULT_NODE_VERSION"
+    fi
+
+
+    source ~/.bashrc
 }
 
 uninstall() {
-    echo "Function not implemented yet"
+    # Define variables
+    version="$1"  # Get the version to uninstall from the first argument
+    version_folder="$HOME/.node/v$version"
 
+    # Check if the version is installed
+    if [ ! -d "$version_folder" ]; then
+        echo "Node.js version $version is not installed. Currently only specific versions of node can be uninstalled via this function"
+        return 1
+    fi
+
+    # Remove the version folder
+    rm -rf "$version_folder"
+    if [ $? -ne 0 ]; then
+        echo "Error removing Node.js version $version."
+        return 1
+    fi
+
+    # Check if the uninstalled version was set in PATH
+    current_path=$(echo $PATH | grep -oP "/.node/v\K[^:]*(?=/bin)")
+    echo "Current path:#${current_path}#"
+    echo "Version:#${version}#"
+    if [[ "$current_path" =~ "$version" ]]; then
+        echo "version matches path"
+        # Find the latest installed version
+        latest_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -n1)
+
+        # Check if any versions remain
+        echo "Latest version: ${latest_version}"
+        if [[ -z "$latest_version" ]]; then
+            # No versions left, remove PATH section
+            sed -i '/^# START RVM NODE PATH$/,/^# END RVM NODE PATH$/d' ~/.bashrc
+            source ~/.bashrc
+            echo "No remaining Node.js versions found. Removed PATH section entirely."
+        else
+            # Update PATH with the latest version
+            sed -i "s|/.node/v$current_path/bin|/.node/$latest_version/bin|g" ~/.bashrc
+            source ~/.bashrc
+            echo "PATH updated to use Node.js version $latest_version."
+        fi
+    else
+        echo "Version does not match path, no changes to PATH settings"
+    fi
+
+    echo "Node.js version $version uninstalled successfully."
 }
 
 prune() {
@@ -269,6 +314,15 @@ uninstallall() {
 
 update() {
     echo "Function not implemented yet"
+    # Should accept: 
+    # rvm update node
+    # rvm update node 18
+    # rvm update node 18.10
+    # rvm update latest
+    # rvm update latest-hyrdrogen
+    # rvm update latest-iron
+
+    # Only the first one requires handling, the rest can be sent directly to install
 
 }
 
