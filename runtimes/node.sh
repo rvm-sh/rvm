@@ -240,13 +240,6 @@ install_specific_version() {
         echo "# END RVM NODE PATH" >> ~/.bashrc
     fi
 
-    # Update default version if applicable
-    if [[ "$install_version" == "$(get_latest_node_version "$os" "$arch")" ]]; then
-        DEFAULT_NODE_VERSION="$install_version"
-        echo "Setting default Node.js version to: $DEFAULT_NODE_VERSION"
-    fi
-
-
     source ~/.bashrc
 }
 
@@ -468,15 +461,15 @@ update() {
     case "$1" in
         current)
             # Extract the current default Node.js version from PATH
-            current_version=$(echo $PATH | grep -oP "\.node/v\K[0-9]+(?=\.[0-9]+/[0-9]+/bin)")
-            if [ -z "$current_version" ]; then
+            current_major_version=$(echo $PATH | grep -oP "\.node/v\K[0-9]+(?=\.[0-9]+/[0-9]+/bin)")
+            if [ -z "$current_major_version" ]; then
                 echo "No default Node.js version found in PATH. Consider specifying a version to update."
                 return 1
             fi
 
             # Call install function with the major version of the current default Node.js version
-            echo "Updating Node.js within the major version line: $current_version"
-            install "$current_version"
+            echo "Updating Node.js within the major version line: $current_major_version"
+            install "$current_major_version"
             ;;
         latest)
             # Directly call install with 'latest'
@@ -606,14 +599,16 @@ EOF
 
 }
 
+
+
 help_showall () {
     cat <<EOF
-To use this command, you can type in:
+    To use this command, you can type in:
     Show all installed
     rvm showall node installed
 
     Show all available at nodejs repository for installation
-    rvm showall available
+    rvm showall node available
 
     Show all available major version at nodejs repository for installation
     rvm showall node available 18 
@@ -623,7 +618,7 @@ EOF
 
 help_update () {
     cat <<EOF
-To use this command, you can type in:
+    To use this command, you can type in:
     Update current default version(with latest of the same major version)
     rvm update node current
 
@@ -658,10 +653,10 @@ help_use () {
     rvm use node 18
 
     Latest installed of major/minor version
-    rvm use 18.10
+    rvm use node 18.10
 
     Specific version
-    rvm use 18.10.0
+    rvm use node 18.10.0
 
     rvm currently does not track lts versions locally, so it does not know which
     are lts versions and which aren't
@@ -680,10 +675,10 @@ help_set () {
     rvm set node 18
 
     Latest installed of major/minor version
-    rvm set 18.10
+    rvm set node 18.10
 
     Specific version
-    rvm set 18.10.0
+    rvm set node 18.10.0
 
     rvm currently does not track lts versions locally, so it does not know which
     are lts versions and which aren't
