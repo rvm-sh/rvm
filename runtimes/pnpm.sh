@@ -45,9 +45,11 @@ install() {
 
     if [[ $requested_version == latest ]]; then
         if [[ $major_version_requested -ne 0 ]]; then
+            echo "Requested latest ${major_version_requested}. Calling latest version of ${major_version_requested} "
             read -r install_version link <<< $(get_latest_major_version "$major_version_requested" "$os" "$arch")
 
         else
+            echo "No major version defined, looking up latest pnpm version"
             read -r install_version link <<< $(get_latest_pnpm_version "$os" "$arch")
         fi
 
@@ -57,7 +59,8 @@ install() {
         fi
         echo "Latest version requested. Installing pnpm ${install_version}"
     elif [[ $requested_version =~ ^[0-9]+$ ]]; then
-        read -r install_version link <<< $(get_latest_major_version $major_version_requested $os $arch)
+        echo "Requested ${requested_version}"
+        read -r install_version link <<< $(get_latest_major_version $requested_version $os $arch)
 
         if [ -z "$install_version" ] || [ -z "$link" ]; then
             echo "Failed to find the latest pnpm version for $os $arch"
@@ -75,8 +78,6 @@ install() {
     elif [[ $requested_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         version="${requested_version}"
         link="https://github.com/pnpm/pnpm/releases/download/v${requested_version}/pnpm-${os}-${arch}"
-        echo "$version $link"
-        return 0
 
 
     else
@@ -173,22 +174,27 @@ install_specific_version() {
         return 1
     fi
 
-    echo "Download complete."
+    # Make the downloaded program executable
+    chmod +x "$download_dir/pnpm"
+
+    echo "Download complete. pnpm is now executable."
 
     # Add pnpm path to PATH variable
     echo "Updating bash PATH settings"
     # Check for existing line and either update or create it
-    if grep -q "export PATH=\$HOME/.pnpm/v[^:]*/bin:\$PATH" ~/.bashrc; then
+    if grep -q "export PATH=\$HOME/.pnpm/v[^:]*:\$PATH" ~/.bashrc; then
     # Update existing line
-        sed -i "s|export PATH=\$HOME/.pnpm/v[^:]*/bin:\$PATH|export PATH=\$HOME/.pnpm/v$install_version/bin:\$PATH|" ~/.bashrc
+        sed -i "s|export PATH=\$HOME/.pnpm/v[^:]*:\$PATH|export PATH=\$HOME/.pnpm/v$install_version:\$PATH|" ~/.bashrc
     else
     # Create new line with comments
         echo "# START RVM PNPM PATH" >> ~/.bashrc
-        echo "export PATH=\$HOME/.pnpm/$install_version/bin:\$PATH" >> ~/.bashrc
+        echo "export PATH=\$HOME/.pnpm/v$install_version:\$PATH" >> ~/.bashrc
         echo "# END RVM PNPM PATH" >> ~/.bashrc
     fi
 
     source ~/.bashrc
+
+    pnpm -v
 }
 
 uninstall() {

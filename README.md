@@ -1,30 +1,56 @@
-# Runner Version Manager
-## Runner Version Manager
+# rvmsh
+## Runtime Version Manager
 
 >[!WARNING]
-> Currently only supports linux
+> Currently only supports bash on linux 
 
 > [!CAUTION]
 > Not ready for production use, functions may not yet work
 
 
 ## Introduction and Motivations
-The runner version manager was created because I had trouble running multiple versions of pnpm, especially projects that lock the version of the runner. I've also had issues running other js frameworks from other people's projects for some reason or the other, and hopefully this solves some of the issue. 
+rvmsh was created because I had trouble in the course of my programing experience, from having issues managing new runtimes, multiple runtime managers, issues with packages, etc. 
 
-I ultimately hope to be able to use this to manage all my runners, whether it be js, python, rust, etc.
+I ultimately hope to be able to use this to manage all my runtimes, whether it be js, python, rust, etc. Hopefully, I would also be able to have some kind of auto determiner that just decides what the correct runtime version to use and to call that version.
 
-Inspired by the simplicity of node version manager
+Inspired by the simplicity of nvm.
 
 ## Definitions
-A runner(or runtime as is commonly termed), is the programme that is run to execute another script / command / task / etc. This includes package managers, compilers, linters, etc. 
+A runtime is the programme that is run to execute another script / command / task / etc. For the purpose of rvmsh this can include package managers, compilers, linters, etc. 
 
 ## Goals
-Current goal is to manage pnpm, npm, node, yarn, react, vue and other js runners / frameworks / compilers but hopefully will include other programming language such as python and rust. The main goal is to have a single version manager for everything that can fall under the category of a runner.
+Current goal is to manage pnpm, npm, node, yarn, bun and other js runtimes / frameworks / compilers but hopefully will include other programming language such as python and rust.
 
-It aims to be somewhat of an extention of nvm and slighly less than a full-featured version manager that asdf is.
+Primary principles:
+ - Monolithic - rvm manages everything instead of modular plugins
+ - Multi OS support - currently supports Linux, MacOS, WSL
+ - Multi-shell support - currently only supports bash. Plan for zsh and other shells
+ - Multi-language - aim to support languages that I use, such as python and rust
+ - Runtime agnostic - aim to support as many runtimes as possible to encourage ecosystem growth / experimentation
+ - Clean - all installation and usage files / folders / settings predictable, self-contained and leaves no trace on uninstall
+ - Maximal compatibility - aims to be maximally compatible 
+ - Minimal dependency - minimise dependency on external packages that do not tend to come standard in unix-based systems 
 
-Currently working on supporting:
+Future goals:
+ - Support runtimes from other languages
+ - Support autocheck / auto determiner to automatically determine and call the correct version
+
+nvm > rvmsh > asdf
+* The goal of this project is to be a more-encompassing, monolithic version of nvm. 
+
+Currently supports:
+ - node
  - pnpm
+
+* Does not support npm currently
+
+Working on 
+ - standalone npm / npx support
+ - bun
+ - yarn
+ - typescript
+ - deno
+ - llrt
 
 Feature goal:
  - An all-in-one version manager for any runner
