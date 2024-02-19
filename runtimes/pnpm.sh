@@ -8,6 +8,12 @@ download() {
   fi
 }
 
+abort() {
+  printf "%s\n" "$@"
+  exit 1
+}
+
+
 install() {
     # Check for at least one argument
     if [ -z "$1" ]; then
@@ -48,15 +54,24 @@ install() {
             echo "Requested latest ${major_version_requested}. Calling latest version of ${major_version_requested} "
             read -r install_version link <<< $(get_latest_major_version "$major_version_requested" "$os" "$arch")
 
+            if [ -z "$install_version" ] || [ -z "$link" ]; then
+                echo "Failed to find a valid latest version for major version ${major_version_requested} requested on the pnpm server"
+                echo "If this version has not been released yet, you may be able to install alpha / beta versions via"
+                echo "rvm install pnpm next ${major_version_requested}"
+                return 1
+            fi
+
         else
             echo "No major version defined, looking up latest pnpm version"
             read -r install_version link <<< $(get_latest_pnpm_version "$os" "$arch")
+
+            if [ -z "$install_version" ] || [ -z "$link" ]; then
+                echo "Failed to find a valid latest version of pnpm from the pnpm server. This is likely an issue from pnpm's server response"
+                return 1
+            fi
         fi
 
-        if [ -z "$install_version" ] || [ -z "$link" ]; then
-            echo "Failed to find the latest pnpm version for $os $arch"
-            return 1
-        fi
+        
         echo "Latest version requested. Installing pnpm ${install_version}"
     elif [[ $requested_version =~ ^[0-9]+$ ]]; then
         echo "Requested ${requested_version}"
@@ -68,16 +83,30 @@ install() {
         fi
 
     elif [[ $requested_version == next ]]; then
+        if [ -z "$major_version_requested" ]; then
+            echo "A major version number must be specified for next version installations, e.g:"
+            echo "rvm install pnpm next 9"
+            return 1
+        fi
+
         read -r install_version link <<< $(get_next_major_version $major_version_requested $os $arch)
 
         if [ -z "$install_version" ] || [ -z "$link" ]; then
-            echo "Failed to find the latest pnpm version for $os $arch"
+            echo "Failed to find the latest next version of pnpm for the requested major version of pnpm for $os $arch"
             return 1
         fi
 
     elif [[ $requested_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         version="${requested_version}"
         link="https://github.com/pnpm/pnpm/releases/download/v${requested_version}/pnpm-${os}-${arch}"
+
+        version_json="$(download "https://registry.npmjs.org/@pnpm/exe/${version}")"
+
+        # Check for "version not found" error in the JSON response
+        if echo "$version_json" | grep -q "version not found: ${version}"; then
+            echo "Version not found: ${major_version}."
+            return 1
+        fi
 
 
     else
@@ -92,7 +121,7 @@ get_latest_pnpm_version() {
     local os="$1"
     local arch="$2"
 
-    version_json="$(download "https://registry.npmjs.org/@pnpm/exe")" || abort "Download Error!"
+    version_json="$(download "https://registry.npmjs.org/@pnpm/exe")"
     version="$(printf '%s' "${version_json}" | tr '{' '\n' | awk -F '"' '/latest/ { print $4 }')"
     link="https://github.com/pnpm/pnpm/releases/download/v${version}/pnpm-${os}-${arch}"
 
@@ -101,42 +130,51 @@ get_latest_pnpm_version() {
 }
 
 
-get_latest_major_version(){
+get_latest_major_version() {
     local major_version="$1"
     local os="$2"
     local arch="$3"
 
-    if [ "$major_version" -lt 6 ]; then
-        echo "Installing the latest major version for PNPM is only supported for pnpm 6 onwards"
-        return 1
-    fi
+    version_json="$(download "https://registry.npmjs.org/@pnpm/exe")"
+    version="$(printf '%s' "${version_json}" | tr '{' '\n' | awk -F '"' '/latest-${major_version}/ { print $4 }')"
 
-    version_json="$(download "https://registry.npmjs.org/@pnpm/exe")" || abort "Download Error!"
-    version="$(printf '%s' "${version_json}" | tr '{' '\n' | awk -v major="$major_version" -F '"' '$0 ~ "latest-" major { print $4 }')"
     link="https://github.com/pnpm/pnpm/releases/download/v${version}/pnpm-${os}-${arch}"
 
     echo "$version $link"
     return 0
 }
+
 
 get_next_major_version() {
     local major_version="$1"
     local os="$2"
     local arch="$3"
 
-    if [ "$major_version" -lt 6 ]; then
-        echo "Installing next versions for PNPM is only supported for pnpm 6 onwards"
+    version_json="$(download "https://registry.npmjs.org/@pnpm/exe/next-$major_version")"
+
+    # Check for "version not found" error in the JSON response
+    if echo "$version_json" | grep -q "version not found: next-${major_version}"; then
+        echo "Version not found: next-${major_version}."
         return 1
     fi
 
-    version_json="$(download "https://registry.npmjs.org/@pnpm/exe")" || abort "Download Error!"
-    version="$(printf '%s' "${version_json}" | tr '{' '\n' | awk -v major="$major_version" -F '"' '$0 ~ "next-" major { print $4 }')"
+    # Attempt to parse the version number from the JSON, including pre-release versions
+    version=$(echo "$version_json" | grep -oP '"version":"\K[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+)?' | head -n 1)
+
+
+    # Check if the version variable is set and follows the expected format
+    if [[ -z "$version" || ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "Failed to parse a valid version from the JSON data."
+        return 1
+    fi
+
     link="https://github.com/pnpm/pnpm/releases/download/v${version}/pnpm-${os}-${arch}"
 
     echo "$version $link"
     return 0
-
 }
+
+
 
 
 # this is the final function call for install
@@ -496,13 +534,19 @@ help_install () {
     rvm install pnpm 8
     rvm install pnpm latest 8
 
-    Next version for a major version
+    Next version for a major version:
     rvm install pnpm next 8
 
     Specific version:
     rvm install pnpm 8.15.3
 
-    Note that latest major.minor version is unsupported for pnpm
+    Note that looking up latest major.minor(ie rvm install pnpm 8.15) version is currently unsupported for rvm install pnpm
+
+    Archived versions note for pnpm:
+    This function currrently looks up pnpm repository for the versions. pnpm only publishes versions 6.17.0 and up, and thus this function only works for versions higher than that
+    To use archive versions from 6.12.0 and up, you can manually download the binary from "https://github.com/pnpm/pnpm/releases", put it in the .pnpm folder with using the naming convention "v<version>"
+    And use rvm use pnpm <version> to set the path
+    For versions below 6.12, you may need to compile the binary and follow manual installation process indicated by pnpm
 EOF
 
 }
