@@ -2,41 +2,24 @@
 
 { # this ensures the entire script is downloaded #
 
-# Abort function
-abort() {
-  printf "%s\n" "$@"
-  exit 1
-}
-
-# Download function
-download() {
-
-  # Default destination
-  dest="$HOME/Downloads"
-  
-  # Allow passing custom destination 
-  if [ "$2" ]; then
-    dest="$2"
-  fi
-
-  if command -v curl > /dev/null 2>&1; then
-    curl -fsSL "$1" -o "$dest/rvm.tar.gz" 
-  else
-    wget -qO- "$1" -O "$dest/rvm.tar.gz"
-  fi
-
-}
-
-#Get the json containing the latest version info
-version_json="$(download "https://registry.npmjs.org/@pnpm/exe")" || abort "Download Error!"
-
 # Get latest version data
 LATEST_RVM_VERSION_URL="https://api.github.com/repos/rvm-sh/rvm/releases/latest"
-latest_version_json="$(download $LATEST_RVM_VERSION_URL)" || abort "Error connecting to Github to get latest rvmsh version"
+
+# Download JSON into variable
+latest_version_json=$(wget -qO- "$LATEST_RVM_VERSION_URL")
+
+# Handle errors
+if [ $? -ne 0 ]; then
+  echo "Failed to get info on latest version of rvm from Github" >&2
+  exit 1
+fi
+
+echo "Version json: ${latest_version_json}"
 
 # Extract tag_name with substring operations
-latest_version="${json#*\'tag_name\': \"}"
-latest_version="${name%%\"*}"
+latest_version=$(echo "$latest_version_json" | grep -o '"name": *"[^"]*"' | awk -F '"' '{print $4}')
+
+echo "Version to be installed: ${latest_version}"
 
 # Check if .rvm folder exists
 if [ ! -d "$HOME/.rvm" ]; then
@@ -50,12 +33,20 @@ else
 fi
 
 # Create folder to store the latest version
-version_folder="$HOME/.rvm/${install_version}"
+version_folder="$HOME/.rvm/${latest_version}"
 mkdir -p "$version_folder"
 
 # Fetch the rvm folder
 RVM_FOLDER_URL="https://api.github.com/repos/rvm-sh/rvm/tarball/${latest_version}"
-download "$RVM_FOLDER_URL" -O "${HOME}/.rvm"
+
+wget -qO "$HOME/.rvm/rvm.tar.gz" "$RVM_FOLDER_URL"
+
+# Check the exit status of wget
+if [ $? -eq 0 ]; then
+    echo "File downloaded successfully."
+else
+    echo "Failed to download the file."
+fi
 
 # Extract the contents of the compressed file to the version directory
 tar -xzf "${HOME}/.rvm/rvm.tar.gz" -C "$version_folder" --strip-components=1
@@ -63,8 +54,12 @@ tar -xzf "${HOME}/.rvm/rvm.tar.gz" -C "$version_folder" --strip-components=1
 # Make rvm.sh executable
 chmod +x "${version_folder}/rvm.sh"
 
+# Remove install folder after installation
+rm -f "$HOME/.rvm/rvm.tar.gz"
+
 # Determine the shell using the process name
 SHELL_NAME=$(ps -p $$ -o comm=)
+
 case "$SHELL_NAME" in
     bash)
         PROFILE="$HOME/.bashrc"
@@ -97,8 +92,6 @@ echo "[ -s \"$version_folder/rvm.sh\" ] && . \"$version_folder/rvm.sh\"  # This 
 echo "#end of runner version manager settings" >> "$PROFILE"
 
 
-# Remove install folder after installation
-rm -f "$HOME/.rvm/rvm.tar.gz"
 
 # Inform the user
 echo "Installation complete. Please restart your terminal or run 'source $PROFILE' to use rvm."

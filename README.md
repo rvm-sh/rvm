@@ -73,8 +73,14 @@ Feature goal:
 ## Usage Commands
 
 ### Installation
+Download and pipe to your shell, for example with bash:
 ```
-wget -qO- https://raw.githubusercontent.com/rvm-sh/rvm/<version>/install.sh | sh -
+wget -qO- https://raw.githubusercontent.com/rvm-sh/rvm/main/install.sh | bash -
+```
+
+On macos (using default zsh):
+```
+wget -qO- https://raw.githubusercontent.com/rvm-sh/rvm/main/install.sh | zsh -
 ```
 
 ### Install the latest version of a runner
