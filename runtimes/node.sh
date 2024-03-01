@@ -19,7 +19,7 @@ install() {
     esac
 
     # determine the version to install
-    local requested_version="$1"
+    local requested_version="$1" 
     if [[ $requested_version == latest ]]; then
         
         read -r install_version link <<< $(get_latest_node_version "$os" "$arch")
@@ -55,6 +55,7 @@ install() {
         echo "Latest requested version for ${requested_version} determined: ${install_version}"
     else
         echo "Invalid version specification: $requested_version"
+        help_install
         return 1
     fi
 
@@ -230,17 +231,16 @@ install_specific_version() {
     # Add Node.js path to PATH variable
     echo "Updating bash PATH settings"
     # Check for existing line and either update or create it
-    if grep -q "export PATH=\$HOME/.node/v[^:]*/bin:\$PATH" ~/.bashrc; then
+    if grep -q "export PATH=\$HOME/.node/v[^:]*/bin:\$PATH" "$HOME/.rvm/.rvmrc"; then
     # Update existing line
-        sed -i "s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=\$HOME/.node/$install_version/bin:\$PATH|" ~/.bashrc
+        sed -i "s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=\$HOME/.node/$install_version/bin:\$PATH|" "$HOME/.rvm/.rvmrc"
     else
     # Create new line with comments
-        echo "# START RVM NODE PATH" >> ~/.bashrc
-        echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> ~/.bashrc
-        echo "# END RVM NODE PATH" >> ~/.bashrc
+        echo "# START RVM NODE PATH" >> "$HOME/.rvm/.rvmrc"
+        echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> "$HOME/.rvm/.rvmrc"
+        echo "# END RVM NODE PATH" >> "$HOME/.rvm/.rvmrc"
     fi
 
-    source ~/.bashrc
 }
 
 uninstall() {
@@ -276,13 +276,11 @@ uninstall() {
         echo "Latest version: ${latest_version}"
         if [[ -z "$latest_version" ]]; then
             # No versions left, remove PATH section
-            sed -i '/^# START RVM NODE PATH$/,/^# END RVM NODE PATH$/d' ~/.bashrc
-            source ~/.bashrc
+            sed -i '/^# START RVM NODE PATH$/,/^# END RVM NODE PATH$/d' "$HOME/.rvm/.rvmrc"
             echo "No remaining Node.js versions found. Removed PATH section entirely."
         else
             # Update PATH with the latest version
-            sed -i "s|/.node/v$current_path/bin|/.node/$latest_version/bin|g" ~/.bashrc
-            source ~/.bashrc
+            sed -i "s|/.node/v$current_path/bin|/.node/$latest_version/bin|g" "$HOME/.rvm/.rvmrc"
             echo "PATH updated to use Node.js version $latest_version."
         fi
     else
@@ -292,8 +290,6 @@ uninstall() {
     # Unset the version path from PATH
     PATH="${PATH%%:$HOME/.node/$version/bin}"
     export PATH
-
-    source ~/.bashrc
 
     echo "Node.js version $version uninstalled successfully."
 }
@@ -319,8 +315,8 @@ prune() {
     done
 
     # Determine the default version from .bashrc if set
-    if grep -q '# START RVM NODE PATH' ~/.bashrc; then
-        default_version=$(grep 'export PATH=$HOME/.node/' ~/.bashrc | grep -o 'v[0-9.]\+')
+    if grep -q '# START RVM NODE PATH' "$HOME/.rvm/.rvmrc"; then
+        default_version=$(grep 'export PATH=$HOME/.node/' "$HOME/.rvm/.rvmrc" | grep -o 'v[0-9.]\+')
     fi
 
     # Prune older versions
@@ -340,8 +336,8 @@ prune() {
         if [[ ! -z "$new_default_version" ]]; then
             local node_path="$HOME/.node/$new_default_version/bin"
             # Update .bashrc with new default version
-            if grep -q '# START RVM NODE PATH' ~/.bashrc; then
-                sed -i "/# START RVM NODE PATH/,/# END RVM NODE PATH/{s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=$node_path:\$PATH|}" ~/.bashrc
+            if grep -q '# START RVM NODE PATH' "$HOME/.rvm/.rvmrc"; then
+                sed -i "/# START RVM NODE PATH/,/# END RVM NODE PATH/{s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=$node_path:\$PATH|}" "$HOME/.rvm/.rvmrc"
             fi
             echo "Default Node.js version updated to $new_default_version"
         fi
@@ -350,8 +346,6 @@ prune() {
     else
         echo "Node.js versions older than $requested_version were removed."
     fi
-
-    source ~/.bashrc
 }
 
 
@@ -440,12 +434,12 @@ removeall() {
     fi
 
     # Delete the setting in the .bashrc file
-    if grep -q '# START RVM NODE PATH' ~/.bashrc; then
-        echo "Removing Node.js path settings from .bashrc..."
-        sed -i '/# START RVM NODE PATH/,/# END RVM NODE PATH/d' ~/.bashrc
-        echo "Node.js path settings removed from .bashrc."
+    if grep -q '# START RVM NODE PATH' "$HOME/.rvm/.rvmrc"; then
+        echo "Removing Node.js path settings from .rvmrc..."
+        sed -i '/# START RVM NODE PATH/,/# END RVM NODE PATH/d' "$HOME/.rvm/.rvmrc"
+        echo "Node.js path settings removed from .rvmrc."
     else
-        echo "Node.js path settings not found in .bashrc. Skipping removal."
+        echo "Node.js path settings not found in .rvmrc. Skipping removal."
     fi
 
     echo "All Node.js versions and settings have been uninstalled successfully."
@@ -559,17 +553,15 @@ set() {
     local node_path="$match_version/bin"
 
     # Check if the .bashrc already contains Node path settings and replace them
-    if grep -q '# START RVM NODE PATH' ~/.bashrc; then
+    if grep -q '# START RVM NODE PATH' "$HOME/.rvm/.rvmrc"; then
         # The .bashrc contains existing Node.js path settings; replace them
-        sed -i "/# START RVM NODE PATH/,/# END RVM NODE PATH/{s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=$node_path:\$PATH|}" ~/.bashrc
+        sed -i "/# START RVM NODE PATH/,/# END RVM NODE PATH/{s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=$node_path:\$PATH|}" "$HOME/.rvm/.rvmrc"
     else
         # The .bashrc does not contain Node.js path settings; add them
-        echo "# START RVM NODE PATH" >> ~/.bashrc
-        echo "export PATH=$node_path:\$PATH" >> ~/.bashrc
-        echo "# END RVM NODE PATH" >> ~/.bashrc
+        echo "# START RVM NODE PATH" >> "$HOME/.rvm/.rvmrc"
+        echo "export PATH=$node_path:\$PATH" >> "$HOME/.rvm/.rvmrc"
+        echo "# END RVM NODE PATH" >> "$HOME/.rvm/.rvmrc"
     fi
-
-    source ~/.bashrc
 
     echo "Node.js $version_folder has been set as your default node version"
 }
