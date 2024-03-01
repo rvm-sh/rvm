@@ -101,13 +101,8 @@ echo "#RVM PATH END" >> "$HOME/.rvm/.rvmrc"
 
 # Set path to rvmrc in .bashrc
 echo "#RVMRC PATH START" >> "$PROFILE"
-echo "[ -s \"$HOME/.rvm/.rvmrc\" ] && . \"$HOME/.rvm/.rvmrc\"  # This loads the .rvmrc file" >> "$PROFILE"
+echo "[ -s \"\$HOME/.rvm/.rvmrc\" ] && . \"\$HOME/.rvm/.rvmrc\"  # This loads the .rvmrc file" >> "$PROFILE"
 echo "#RVMRC PATH END" >> "$PROFILE"
-
-# Inform the user
-echo "Installation complete. Please restart your terminal or run 'source $PROFILE' to use rvm."
-
-source $PROFILE
 
 # Check if jq is installed
 echo "Checking if jq is already available in the system"
@@ -146,6 +141,11 @@ else
 
 fi
 
-echo "Installation complete"
+source $PROFILE
+
+# Inform the user
+echo "Installation complete. Please restart your terminal or run 'source $PROFILE' to use rvm."
+
+
 
 }
