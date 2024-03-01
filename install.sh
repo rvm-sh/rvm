@@ -85,11 +85,19 @@ esac
 echo "Detected shell: $SHELL_NAME"
 echo "Using profile file: $PROFILE"
 
-# Set the path to rvm
-echo "#runner version manager settings" >> "$PROFILE"
-echo "export RVM_DIR=\"$version_folder\"" >> "$PROFILE"
-echo "[ -s \"$version_folder/rvm.sh\" ] && . \"$version_folder/rvm.sh\"  # This loads rvm" >> "$PROFILE"
-echo "#end of runner version manager settings" >> "$PROFILE"
+
+
+# Set the path to rvm in a new .rvmrc file in the .rvm folder
+echo "#RVM PATH START" >> "$HOME/.rvm/.rvmrc"
+echo "export RVM_DIR=\"$version_folder\"" >> "$HOME/.rvm/.rvmrc"
+echo "[ -s \"$version_folder/rvm.sh\" ] && . \"$version_folder/rvm.sh\"  # This loads rvmrc" >> "$HOME/.rvm/.rvmrc"
+echo "#RVM PATH END" >> "$HOME/.rvm/.rvmrc"
+
+# Set path to rvmrc in .bashrc
+echo "#RVMRC PATH START" >> "$PROFILE"
+echo "[ -s \"$HOME/.rvm/.rvmrc\" ] && . \"$HOME/.rvm/.rvmrc\"  # This loads the .rvmrc file" >> "$PROFILE"
+echo "#RVMRC PATH START" >> "$PROFILE"
+
 
 
 
