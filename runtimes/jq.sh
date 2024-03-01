@@ -18,8 +18,11 @@ install() {
         aarch64) arch="arm64" ;;
     esac
 
+    
+
     # determine the version to install
     local requested_version="$1"
+
     if [[ $requested_version == latest ]]; then
         
         read -r install_version link <<< $(get_latest_jq_version "$os" "$arch")

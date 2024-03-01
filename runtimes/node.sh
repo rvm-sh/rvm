@@ -19,7 +19,7 @@ install() {
     esac
 
     # determine the version to install
-    local requested_version="$1"
+    local requested_version="$1" 
     if [[ $requested_version == latest ]]; then
         
         read -r install_version link <<< $(get_latest_node_version "$os" "$arch")
@@ -55,6 +55,7 @@ install() {
         echo "Latest requested version for ${requested_version} determined: ${install_version}"
     else
         echo "Invalid version specification: $requested_version"
+        help_install
         return 1
     fi
 
