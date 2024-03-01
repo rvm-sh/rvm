@@ -85,16 +85,57 @@ esac
 echo "Detected shell: $SHELL_NAME"
 echo "Using profile file: $PROFILE"
 
-# Set the path to rvm
-echo "#runner version manager settings" >> "$PROFILE"
-echo "export RVM_DIR=\"$version_folder\"" >> "$PROFILE"
-echo "[ -s \"$version_folder/rvm.sh\" ] && . \"$version_folder/rvm.sh\"  # This loads rvm" >> "$PROFILE"
-echo "#end of runner version manager settings" >> "$PROFILE"
 
 
+# Set the path to rvm in a new .rvmrc file in the .rvm folder
+echo "#RVM PATH START" >> "$HOME/.rvm/.rvmrc"
+echo "export RVM_DIR=\"$version_folder\"" >> "$HOME/.rvm/.rvmrc"
+echo "[ -s \"\$HOME/.rvm/${latest_version}\" ] && . \"\$HOME/.rvm/${latest_version}\"  # This loads rvmrc" >> "$HOME/.rvm/.rvmrc"
+echo "#RVM PATH END" >> "$HOME/.rvm/.rvmrc"
+
+# Set path to rvmrc in .bashrc
+echo "#RVMRC PATH START" >> "$PROFILE"
+echo "[ -s \"$HOME/.rvm/.rvmrc\" ] && . \"$HOME/.rvm/.rvmrc\"  # This loads the .rvmrc file" >> "$PROFILE"
+echo "#RVMRC PATH START" >> "$PROFILE"
 
 # Inform the user
 echo "Installation complete. Please restart your terminal or run 'source $PROFILE' to use rvm."
 
+source $PROFILE
+
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    echo " jq was not found in the system"
+    echo " rvm uses jq to parse responses from websites when checking versions"
+
+    # Detect the operating system to provide more specific installation instructions
+    case "$(uname -s)" in
+        Linux)
+            echo "You can install jq using rvm or your system package manager"
+            echo "rvmsh:         rvm install jq latest"
+            echo "Debian/Ubuntu: sudo apt-get install jq"
+            echo "openSUSE:      sudo zypper install jq"
+            echo "Fedora:        sudo dnf install jq"
+            echo "Arch:          sudo pacman -S jq"
+            ;;
+        Darwin)
+            echo "You can install jq using rvm or use another package manager"
+            echo "rvmsh:  rvm install jq latest"
+            echo "Brew:   brew install jq"
+            echo "Port:   port install jq"
+            echo "Fink:   fink install jq"
+            ;;
+        *)
+            echo "You can install jq using rvm or use another package manager"
+            echo "rvmsh: rvm install jq latest"
+            ;;
+    esac
+
+    # Exit the script if jq is not installed
+    exit 1
+fi
+
+# Proceed with the rest of the script if jq is installed
+echo "jq is installed, proceeding..."
 
 }
