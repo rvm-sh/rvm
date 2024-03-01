@@ -31,42 +31,50 @@ rvm() {
             # Install a version of the runtime
             [ "$command" = "add" ] && command="install"
             delegate_to_manager "$command" "$2" "${@:3}"
+            source_settings
             ;;
         remove | uninstall)
             # Map 'remove' and 'uninstall' to the same function
             # Uninstall a specific version of the runtime
             [ "$command" = "remove" ] && command="uninstall"
             delegate_to_manager "$command" "$2" "${@:3}"
+            source_settings
             ;;
         prune)
             #Uninstall all older versions of a runtime
             delegate_to_manager "$command" "$2" "${@:3}"
+            source_settings
             ;;
         showall | all)
             # Map 'showall' and 'all' to the same function
             # Show all installed versions of a runtime
             [ "$command" = "all" ] && command="showall"
             delegate_to_manager "$command" "$2" "${@:3}"
+            source_settings
             ;;
         removeall | uninstallall)
             # Map 'removeall' and 'uninstallall' to the same function
             # Uninstall all versions of a runtime
             [ "$command" = "uninstallall" ] && command="removeall"
             delegate_to_manager "$command" "$2" "${@:3}"
+            source_settings
             ;;
         update)
             # Update the default runtime to the latest major version and set this as default
             delegate_to_manager "$command" "$2" "${@:3}"
+            source_settings
             ;;
         use)
             # Temporarily set a specific node version
             delegate_to_manager "$command" "$2" "${@:3}"
+            source_settings
             ;;
         set | default)
             # Map 'set' and 'default' to the same function
             # Set default version of runtime
             [ "$command" = "default" ] && command="set"
             delegate_to_manager "$command" "$2" "${@:3}"
+            source_settings
             ;;
         help)
             # Directly handle the help command
@@ -77,7 +85,8 @@ rvm() {
             version "$@"
             ;;
         *)
-            echo "Unrecognized command: $command"
+            echo "Unrecognized command"
+            help
             ;;
     esac
 }
@@ -94,4 +103,31 @@ help() {
 # Help function
 version() {
     echo "No version tracking yet"
+}
+
+source_settings() {
+    SHELL_NAME=$(ps -p $$ -o comm=)
+
+    case "$SHELL_NAME" in
+        bash)
+            source "$HOME/.bashrc"
+            ;;
+        zsh)
+            source "$HOME/.zshrc"
+            ;;
+        ksh)
+            source "$HOME/.kshrc"
+            ;;
+        fish)
+            source "$HOME/.config/fish/config.fish"
+            ;;
+        *sh|sh)
+            source ="$HOME/.profile"
+            ;;
+        *)
+            echo "Unrecognized shell: $SHELL_NAME"
+            exit 1
+            ;;
+    esac
+
 }

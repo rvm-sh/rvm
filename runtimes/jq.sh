@@ -131,17 +131,15 @@ install_specific_version() {
     # Add jq path to PATH variable
     echo "Updating bash PATH settings"
     # Check for existing jq path and either update or create it
-    if grep -q "export PATH=\$HOME/.jq/v[^:]*/:\$PATH" ~/.bashrc; then
+    if grep -q "export PATH=\$HOME/.jq/v[^:]*/:\$PATH" "$HOME/.rvm/.rvmrc"; then
         # Update existing line
-        sed -i "s|export PATH=\$HOME/.jq/v[^:]*/:\$PATH|export PATH=\$HOME/.jq/$install_version:\$PATH|" ~/.bashrc
+        sed -i "s|export PATH=\$HOME/.jq/v[^:]*/:\$PATH|export PATH=\$HOME/.jq/$install_version:\$PATH|" "$HOME/.rvm/.rvmrc"
     else
         # Create new line with comments
-        echo "# START JQ PATH" >> ~/.bashrc
-        echo "export PATH=\$HOME/.jq/$install_version:\$PATH" >> ~/.bashrc
-        echo "# END JQ PATH" >> ~/.bashrc
+        echo "# START JQ PATH" >> "$HOME/.rvm/.rvmrc"
+        echo "export PATH=\$HOME/.jq/$install_version:\$PATH" >> "$HOME/.rvm/.rvmrc"
+        echo "# END JQ PATH" >> "$HOME/.rvm/.rvmrc"
     fi
 
-
-    source ~/.bashrc
     echo "Path updated. If terminal does not recognise new version, please restart your terminal"
 }
