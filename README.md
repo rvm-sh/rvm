@@ -5,7 +5,7 @@
 > Currently only supports bash on linux 
 
 > [!CAUTION]
-> Not ready for production use, functions may not yet work
+> Not ready for production use, functions may not yet have been implemented or even work
 
 
 ## Introduction and Motivations
@@ -39,6 +39,7 @@ nvm > rvmsh > asdf
 * The goal of this project is to be a more-encompassing, monolithic version of nvm. 
 
 Currently supports:
+ - jq
  - node
  - pnpm
 

@@ -25,6 +25,13 @@ delegate_to_manager() {
 # Define the rvm function
 rvm() {
     local command=$1
+
+    # Check if the command is empty and call the help function if it is
+    if [ -z "$command" ]; then
+        help
+        return  # Exit the function early
+    fi
+
     case $command in
         add | install)
             # Map 'add' and 'install' to the same function
@@ -78,8 +85,13 @@ rvm() {
             ;;
         help)
             # Directly handle the help command
-            help "$@"
-            ;;
+            if [ -z "$2" ]; then
+                help
+                return
+            else 
+                delegate_to_manager "$command" "$2" "${@:3}"
+            fi
+
         version)
             # Directly handle the version command
             version "$@"
@@ -94,7 +106,26 @@ rvm() {
 # Help function
 help() {
     if [ -z "$2" ]; then
-        echo "Available commands: add, install, remove, uninstall, prune, showall, removeall, uninstallall, update, use, default, help"
+        cat <<EOF
+            Welcome to rvmsh
+
+            Current supported runtimes:
+            - node
+            - pnpm
+
+            Usage: rvm [command] [runtime] [options]
+
+            The following commands may be available for each runtime: 
+            add/install, remove/uninstall, prune, showall, removeall, uninstallall, update, use, default, help
+            (Currently not all commands may have been implemented for every runner)
+
+            Every runtime has its own versioning, release, hosting and management quirks (as well as different pace in update in rvm).
+            Get the guides from the respective help page for the runtime via:
+
+            rvm help [runtime], e.g:
+            rvm help node
+EOF
+
     else
         echo "Hello, $2. What can I do for you?"
     fi
