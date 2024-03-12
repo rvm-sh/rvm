@@ -86,21 +86,21 @@ wget -qO- https://raw.githubusercontent.com/rvm-sh/rvm/main/install.sh | zsh -
 
 ### Install the latest version of a runner
 ```
-rvm add pnpm@latest
+rvm add pnpm latest
 ```
 also the `install` argument works too
 ```
-rvm install pnpm@latest
+rvm install pnpm latest
 ```
 
 ### Install a specific version of a runner
 Use either `add` or `install`
 ```
-rvm add pnpm@8
+rvm add pnpm 8
 ```
 or even
 ```
-rvm install pnpm@8.14.0
+rvm install pnpm 8.14.0
 ```
 
 ### Upgrade a runner
@@ -112,11 +112,11 @@ rvm upgrade pnpm
 ### Set a specific runner version as default
 Use either `set` or `use`
 ```
-rvm set pnpm@18.14.0
+rvm set pnpm 18.14.0
 ```
 or
 ```
-rvm use pnpm@18.14.0
+rvm use pnpm 18.14.0
 ```
 
 ### Show version of default runner
@@ -131,7 +131,7 @@ pnpm build
 ```
 Use a specific runner:
 ```
-pnpm@8.14.0 build
+pnpm 8.14.0 build
 ```
 
 ### Show all installed versions of a specific runner
@@ -146,13 +146,13 @@ rvm all pnpm
 
 ### Remove specific version of a runner
 ```
-rvm remove pnpm@8.14.0
+rvm remove pnpm 8.14.0
 ```
 
 ### Prune all older versions of a runner
 This deletes all versions of a runner older than the specified runner (specified version not included)
 ```
-rvm prune pnpm@6.12.4
+rvm prune pnpm 6.12.4
 ```
 
 ### Remove all versions of a runner
