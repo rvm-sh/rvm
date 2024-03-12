@@ -678,3 +678,38 @@ EOF
 
 }
 
+help () {
+    cat <<EOF
+    Welcome to the node help section
+
+    Usage: rvm [command] node [options]
+
+    The runtime manager for node has the following options available:
+        add / install       Install a version of the runtime
+        remove / uninstall  Uninstall a specific version of the runtime
+        prune               Uninstall all older versions of a runtime
+        showall / all       Show all installed versions of a runtime
+        removeall           Uninstallall  Uninstall all versions of a runtime
+        update              Update the default runtime to the latest major version
+        use                 Temporarily set a specific runtime version
+        set / default       Set the default version of runtime
+        help                Show this help message
+        version             Show the version of this script
+
+    Use the commands such as:
+    rvm add node latest
+    rvm remove node 18.14.0
+    rvm showall node
+
+
+    You can get specific help for the commands (if necessary or available) by calling the commands with the help option
+
+    rvm add node help
+
+    Some commands, such as add, require you to specify the option. If you do not specify the options, rvmsh will display the command options
+
+    
+EOF
+
+}
+

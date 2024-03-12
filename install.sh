@@ -14,8 +14,6 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo "Version json: ${latest_version_json}"
-
 # Extract tag_name with substring operations
 latest_version=$(echo "$latest_version_json" | grep -o '"name": *"[^"]*"' | awk -F '"' '{print $4}')
 
@@ -46,6 +44,16 @@ if [ $? -eq 0 ]; then
     echo "File downloaded successfully."
 else
     echo "Failed to download the file."
+    echo "Please try again or check network status"
+    echo "Removing the .rvm directory..."
+    if [ -n "$HOME" ] && [ -d "$HOME/.rvm" ]; then
+        echo "Removing the .rvm directory..."
+        rm -rf "$HOME/.rvm"
+    else
+        echo "Safety check failed: Either HOME is not set, or the .rvm directory does not exist."
+        exit 1
+    fi
+    exit 1
 fi
 
 # Extract the contents of the compressed file to the version directory
@@ -85,28 +93,23 @@ esac
 echo "Detected shell: $SHELL_NAME"
 echo "Using profile file: $PROFILE"
 
-
-
 # Set the path to rvm in a new .rvmrc file in the .rvm folder
 echo "#RVM PATH START" >> "$HOME/.rvm/.rvmrc"
-echo "export RVM_DIR=\"$version_folder\"" >> "$HOME/.rvm/.rvmrc"
-echo "[ -s \"\$HOME/.rvm/${latest_version}\" ] && . \"\$HOME/.rvm/${latest_version}\"  # This loads rvmrc" >> "$HOME/.rvm/.rvmrc"
+echo "export RVM_DIR=\"\$HOME/.rvm/${latest_version}\"" >> "$HOME/.rvm/.rvmrc"
+echo "[ -s \"\$RVM_DIR/rvm.sh\" ] && . \"\$RVM_DIR/rvm.sh\"  # This loads rvmrc" >> "$HOME/.rvm/.rvmrc"
 echo "#RVM PATH END" >> "$HOME/.rvm/.rvmrc"
 
 # Set path to rvmrc in .bashrc
 echo "#RVMRC PATH START" >> "$PROFILE"
-echo "[ -s \"$HOME/.rvm/.rvmrc\" ] && . \"$HOME/.rvm/.rvmrc\"  # This loads the .rvmrc file" >> "$PROFILE"
-echo "#RVMRC PATH START" >> "$PROFILE"
-
-# Inform the user
-echo "Installation complete. Please restart your terminal or run 'source $PROFILE' to use rvm."
-
-source $PROFILE
+echo "[ -s \"\$HOME/.rvm/.rvmrc\" ] && . \"\$HOME/.rvm/.rvmrc\"  # This loads the .rvmrc file" >> "$PROFILE"
+echo "#RVMRC PATH END" >> "$PROFILE"
 
 # Check if jq is installed
+echo "Checking if jq is already available in the system"
+
 if ! command -v jq &> /dev/null; then
     echo " jq was not found in the system"
-    echo " rvm uses jq to parse responses from websites when checking versions"
+    echo " rvmsh uses jq to parse responses from websites when checking versions"
 
     # Detect the operating system to provide more specific installation instructions
     case "$(uname -s)" in
@@ -133,9 +136,16 @@ if ! command -v jq &> /dev/null; then
 
     # Exit the script if jq is not installed
     exit 1
+else
+    echo "jq already available"
+
 fi
 
-# Proceed with the rest of the script if jq is installed
-echo "jq is installed, proceeding..."
+source $PROFILE
+
+# Inform the user
+echo "Installation complete. Please restart your terminal or run 'source $PROFILE' to use rvm."
+
+
 
 }
