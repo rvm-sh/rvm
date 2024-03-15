@@ -1,3 +1,4 @@
+
 #!/bin/sh
 
 # Add installs either <specific version>, <latest>, <major> at a minimum
@@ -6,10 +7,6 @@
 # rvm add node 18.14.12     - installs this specific version
 
 add () {
-    # Get the github page for the code
-    
-     
-
 
 }
 
@@ -77,3 +74,7 @@ supported() {
 showall() {
 
 }
+
+
+
+
