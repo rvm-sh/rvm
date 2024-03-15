@@ -99,7 +99,7 @@ echo "export RVM_DIR=\"\$HOME/.rvm/${latest_version}\"" >> "$HOME/.rvm/.rvmrc"
 echo "[ -s \"\$RVM_DIR/rvm.sh\" ] && . \"\$RVM_DIR/rvm.sh\"  # This loads rvmrc" >> "$HOME/.rvm/.rvmrc"
 echo "#RVM PATH END" >> "$HOME/.rvm/.rvmrc"
 
-# Set path to rvmrc in .bashrc
+# Set path to rvmrc in shell rc file
 echo "#RVMRC PATH START" >> "$PROFILE"
 echo "[ -s \"\$HOME/.rvm/.rvmrc\" ] && . \"\$HOME/.rvm/.rvmrc\"  # This loads the .rvmrc file" >> "$PROFILE"
 echo "#RVMRC PATH END" >> "$PROFILE"

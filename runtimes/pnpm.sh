@@ -14,7 +14,7 @@ abort() {
 }
 
 
-install() {
+add() {
     # Check for at least one argument
     if [ -z "$1" ]; then
         help_install
@@ -235,7 +235,7 @@ install_specific_version() {
     pnpm -v
 }
 
-uninstall() {
+remove() {
     # Define variables
     version="$1"  # Get the version to uninstall from the first argument
     version_folder="$HOME/.pnpm/v$version"

@@ -6,9 +6,17 @@
 # rvm add node 18.14.12     - installs this specific version
 
 add () {
-    # Get the github page for the code
-    
-     
+    # Check for at least one argument
+    if [ -z "$1" ]; then
+        help_install
+        return 1
+    fi
+
+    # Get the list of versions
+
+    # parse 
+
+
 
 
 }
@@ -39,8 +47,57 @@ upgrade () {
 # rvm removeall node
 
 removeall() {
+    echo "Removing all versions of rvm"
+    echo "Removing rvm without removing installed runtimes (that are managed by rvm) will break the ability to use the installed runtimes"
+    echo "It is recommended that you remove the runtimes before removing rvm"
+
+    read -p "Are you sure you want to proceed? [y(yes)/n(no)]: " choice
+
+    case $choice in
+        y | Y | yes)
+            # Remove .rvm folder
+            rm -rf "$HOME/.rvm"
+
+            # check shell name
+            SHELL_NAME=$(ps -p $$ -o comm=)
+
+            case "$SHELL_NAME" in
+                bash)
+                    PROFILE="$HOME/.bashrc"
+                    ;;
+                zsh)
+                    PROFILE="$HOME/.zshrc"
+                    ;;
+                ksh)
+                    PROFILE="$HOME/.kshrc"
+                    ;;
+                fish)
+                    PROFILE="$HOME/.config/fish/config.fish"
+                    ;;
+                *sh|sh)
+                    PROFILE="$HOME/.profile"
+                    ;;
+                *)
+                    echo "Unrecognized shell: $SHELL_NAME"
+                    exit 1
+                    ;;
+            esac
+
+            # Remove rvm link in file setting
+            sed -i '/^#RVMRC PATH START$/,/^#RVMRC PATH END$/d' "$PROFILE"
+
+            ;;
+        n | N | no)
+            exit 1
+            ;;
+        *)
+            echo "Invalid option. Please try again."
+            ;;
+    esac
+
 
 }
+
 
 # Use sets the specific <major> or <major_minor_rev> version of the runtime temporarily. Resets on restart
 # rvm use node 18
