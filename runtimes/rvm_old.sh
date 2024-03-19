@@ -58,6 +58,8 @@ removeall() {
             # Remove .rvm folder
             rm -rf "$HOME/.rvm"
 
+            echo ".rvm folder deleted"
+
             # check shell name
             SHELL_NAME=$(ps -p $$ -o comm=)
 
@@ -86,12 +88,19 @@ removeall() {
             # Remove rvm link in file setting
             sed -i '/^#RVMRC PATH START$/,/^#RVMRC PATH END$/d' "$PROFILE"
 
+            echo "rvm path link removed from $PROFILE"
+
+            echo "rvm removed successfully"
+
+            exit 0
+
             ;;
         n | N | no)
             exit 1
             ;;
         *)
             echo "Invalid option. Please try again."
+            exit 1
             ;;
     esac
 
