@@ -4,3 +4,8 @@
 export RVM_DIR="$HOME/.rvm/v0.0.1-alpha.3"
 [ -s "$HOME/.rvm/v0.0.1-alpha.3/rvm.sh" ] && . "$HOME/.rvm/v0.0.1-alpha.3/rvm.sh"  # This loads rvmrc
 #RVM PATH END
+
+#NODE PATH START
+export NODE_DIR="$HOME/.node/v18.10.14"
+[ -s "$NODE_DIR/node" ] && . "$NODE_DIR/bin/node"
+#NODE PATH END

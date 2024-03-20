@@ -27,15 +27,57 @@ help_add () {
 # rvm remove node 18
 # rvm remove node 18.14.12
 
-remove () {
 
+remove() {
+  if [[ $# -eq 0 ]]; then
+    help_remove
+    return
+  fi
+
+  if [[ $1 == "help" ]]; then
+    help_remove
+    return
+  fi
+
+  runtime_folder="$HOME/.$RUNTIME"
+
+  if [[ $1 =~ ^[0-9]+$ ]]; then
+    # Major version specified
+    major_version=$1
+    echo "Removing versions of $RUNTIME with major version $major_version"
+    
+    for folder in "$runtime_folder"/v"$major_version".*; do
+      if [[ -d $folder ]]; then
+        rm -rf "$folder"
+        echo "Removed $folder"
+      fi
+    done
+  else
+    # Specific version specified
+    specific_version=$1
+    echo "Removing specific version $specific_version of $RUNTIME"
+    
+    folder="$runtime_folder/v$specific_version"
+    if [[ -d $folder ]]; then
+      rm -rf "$folder"
+      echo "Removed $folder"
+    else
+      echo "Version $specific_version not found"
+    fi
+  fi
+
+  # ADD PATH CHECKING TO THIS FUNCTION TO CHECK IF PATH IN THE .RVMSHRC FILE NEEDS TO BE UPDATED
+  # IF YES, PLEASE  PARSE THE LATEST VERSION AVAILABLE/INSTALLED AND SET THAT AS THE DEFAULT
+  # IF NO, PRINT OUT MESSAGE AND ERASE PATH AND DO NOT ADD ANYTHING TO IT
 }
 
 help_remove()  {
-    echo "Remove removes <specific_version> and <major_version> versions only currently"
+    echo "Remove removes <specific_version> and <major_version> versions only"
     echo "rvm remove $RUNTIME <version> - removes the specific version of $RUNTIME. eg:"
-    echo "rvm remove $RUNTIME 8         - removes the latest version of $RUNTIME 8"
+    echo "rvm remove $RUNTIME 8         - removes the versions of $RUNTIME that has the major version 8"
     echo "rvm remove $RUNTIME 8.14.12   - removes this specific version of $RUNTIME 8.14.12"
+    echo "see prune command for removing all versions older than a specific version"
+    echo "see removeall command for removing all versions of $RUNTIME"
 }
 
 # Update installs latest of the major version being used and makes it the default
