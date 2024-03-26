@@ -2,18 +2,17 @@
 #!/bin/sh
 
 # Name runtime here
+# Name should be all small letters, eg rvm, node, cargo, python
 $RUNTIME = ""
 
 # Add installs either <specific version>, <latest>, <major> at a minimum
-# Add can implement runtime-specific arguments such as 
+# Use custom implementation code according to source requirements
+# Must have the below 3 implementations but can also have additional commands such as future, forward, etc
 # rvm add node latest       - installs latest as defined by runtime maintainers
 # rvm add node 18           - installs latest version of node 18
 # rvm add node 18.14.12     - installs this specific version
 
-add () {
-    local $
-
-}
+add () {}
 
 help_add () {
     echo "Add installs either <specific version>, <latest>, <major_version> depending on availability by runtime managers"
@@ -23,9 +22,9 @@ help_add () {
     echo "rvm add $RUNTIME 8.14.12 - installs this specific version of $RUNTIME 8.14.12"
 }
 
-# Remove removes <specific_version>, <major_version> and <major> versions only currently
-# rvm remove node 18
-# rvm remove node 18.14.12
+# Remove removes <specific_version> and <major> versions only currently
+# rvm remove node 18        - removes all versions of 18
+# rvm remove node 18.14.12  - removes only specific version
 
 
 remove() {
@@ -83,9 +82,13 @@ help_remove()  {
 # Update installs latest of the major version being used and makes it the default
 # rvm update node
 # will update to the latest node 18 if that is the major version set as default 
+# Use custom implementation code according to source requirements
 
 update () {
-
+  if [[ $1 == "help" ]]; then
+    help_update
+    return
+  fi
 }
 
 help_update() {
@@ -95,9 +98,13 @@ help_update() {
 
 # Upgrade adds the latest version and makes it the default
 # rvm upgrade node
+# Use custom implementation code according to source requirements
 
 upgrade () {
-
+  if [[ $1 == "help" ]]; then
+    help_update
+    return
+  fi
 }
 
 help_upgrade() {
@@ -105,12 +112,45 @@ help_upgrade() {
     echo "rvm update $RUNTIME"
 }
 
-# Removeall removes all the versions of the runtime 
+# Removeall removes all the versions of the runtime, e.g 
 # rvm removeall node
 
 removeall() {
+    if [[ $1 == "help" ]]; then
+        help_removeall
+        return
+    fi
 
+    echo "This will uninstall all $RUNTIME versions. Are you sure? (y/n)"
+    read -r confirm
+    if [[ $confirm != "y" && $confirm != "Y" ]]; then
+        echo "Uninstall cancelled."
+        return
+    fi
+
+    echo "Uninstalling all $RUNTIME versions..."
+    # Delete the .node folder
+    if [ -d "$HOME/.$RUNTIME" ]; then
+        echo "Removing the .$RUNTIME folder..."
+        rm -rf "$HOME/.$RUNTIME"
+        echo ".$RUNTIME folder removed successfully."
+    else
+        echo "No .$RUNTIME folder found. Skipping removal."
+    fi
+
+    RUNTIME_CAP=$(echo $RUNTIME | tr '[:lower:]' '[:upper:]')
+    # Delete the setting in the .rvmrc file
+    if grep -q "# START $RUNTIME_CAP PATH" "$HOME/.rvm/.rvmrc"; then
+        echo "Removing $RUNTIME path settings from .rvmrc..."
+        sed -i "/# START $RUNTIME_CAP PATH/,/# END $RUNTIME_CAP PATH/d" "$HOME/.rvm/.rvmrc"
+        echo "$RUNTIME path settings removed from .rvmrc."
+    else
+        echo "$RUNTIME path settings not found in .rvmrc. Skipping removal."
+    fi
+
+    echo "All $RUNTIME versions and settings have been uninstalled successfully."
 }
+
 
 help_removeall() {
     echo "Removeall removes all the versions of $RUNTIME added to system. eg."
@@ -122,6 +162,15 @@ help_removeall() {
 # rvm use node 18.14.12
 
 use () {
+  if [[ $# -eq 0 ]]; then
+    help_use
+    return
+  fi
+
+  if [[ $1 == "help" ]]; then
+    help_use
+    return
+  fi
 
 }
 
@@ -136,6 +185,15 @@ help_use() {
 # rvm set node 18
 # rvm set node 18.14.12
 set () {
+  if [[ $# -eq 0 ]]; then
+    help_set
+    return
+  fi
+
+  if [[ $1 == "help" ]]; then
+    help_set
+    return
+  fi
 
 }
 
@@ -166,6 +224,10 @@ help() {
 # Returns positive confirmation that runtime is supported
 # rvm supported node
 supported() {
+  if [[ $1 == "help" ]]; then
+    help_supported
+    return
+  fi
 
 }
 
@@ -182,6 +244,15 @@ supported_help() {
 # rvm showall node installed
 # rvm showall node available
 showall() {
+  if [[ $# -eq 0 ]]; then
+    help_showall
+    return
+  fi
+
+  if [[ $1 == "help" ]]; then
+    help_showall
+    return
+  fi
 
 }
 
@@ -196,6 +267,15 @@ help_showall() {
 # rvm prune node 18.10
 # rvm prune node 18.10.14 
 prune() {
+  if [[ $# -eq 0 ]]; then
+    help_prune
+    return
+  fi
+
+  if [[ $1 == "help" ]]; then
+    help_prune
+    return
+  fi
     
 }
 
