@@ -7,5 +7,5 @@ export RVM_DIR="$HOME/.rvm/v0.0.1-alpha.3"
 
 #NODE PATH START
 export NODE_DIR="$HOME/.node/v18.10.14"
-[ -s "$NODE_DIR/node" ] && . "$NODE_DIR/bin/node"
+[ -s "$NODE_DIR/bin/node" ] && . "$NODE_DIR/bin/node"
 #NODE PATH END

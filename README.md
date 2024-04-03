@@ -2,7 +2,7 @@
 ## Runtime Version Manager
 
 >[!WARNING]
-> Currently only supports bash on linux 
+> Currently only tested on bash on linux 
 
 > [!CAUTION]
 > Not ready for production use, functions may not yet have been implemented or even work
@@ -11,7 +11,7 @@
 ## Introduction and Motivations
 rvmsh was created because I had trouble in the course of my programing experience, from having issues managing new runtimes, multiple runtime managers, issues with packages, etc. 
 
-I ultimately hope to be able to use this to manage all my runtimes, whether it be js, python, rust, etc. Hopefully, I would also be able to have some kind of auto determiner that just decides what the correct runtime version to use and to call that version.
+The primary goal is to be able to use this to manage all runtimes, whether it be js, python, rust, etc. If possible, would also like to have some kind of auto determiner that just decides what the correct runtime version to use and to call that version(not currently available).
 
 Inspired by the simplicity of nvm.
 
@@ -23,20 +23,20 @@ Current goal is to manage pnpm, npm, node, yarn, bun and other js runtimes / fra
 
 Primary principles:
  - Monolithic - rvm manages everything instead of modular plugins
- - Multi OS support - currently supports Linux, MacOS, WSL
- - Multi-shell support - currently only supports bash. Plan for zsh and other shells
- - Multi-language - aim to support languages that I use, such as python and rust
+ - Multi-language - aim to support multiple languages, such as python and rust
  - Runtime agnostic - aim to support as many runtimes as possible to encourage ecosystem growth / experimentation
  - Clean - all installation and usage files / folders / settings predictable, self-contained and leaves no trace on uninstall
  - Maximal compatibility - aims to be maximally compatible 
  - Minimal dependency - minimise dependency on external packages that do not tend to come standard in unix-based systems 
 
 Future goals:
+ - Support MacOS, Windows, and other architectures
+ - Support multiple shells
  - Support runtimes from other languages
  - Support autocheck / auto determiner to automatically determine and call the correct version
 
 nvm > rvmsh > asdf
-* The goal of this project is to be a more-encompassing, monolithic version of nvm. 
+* The goal of this project is to be a more-encompassing, monolithic version of nvm. If your need is something more versatile / modular, asdf may be a better option
 
 Currently supports:
  - jq

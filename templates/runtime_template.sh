@@ -1,5 +1,7 @@
 
-#!/bin/sh
+# Add, update, upgrade and showall available should be manually written
+# Remove, removeall, supported, use, set should be standard
+# Standard functions should have their own shell script (so that we can change it without having to reimplement every script)
 
 # Name runtime here
 # Name should be all small letters, eg rvm, node, cargo, python
@@ -139,13 +141,13 @@ removeall() {
     fi
 
     RUNTIME_CAP=$(echo $RUNTIME | tr '[:lower:]' '[:upper:]')
-    # Delete the setting in the .rvmrc file
-    if grep -q "# START $RUNTIME_CAP PATH" "$HOME/.rvm/.rvmrc"; then
-        echo "Removing $RUNTIME path settings from .rvmrc..."
-        sed -i "/# START $RUNTIME_CAP PATH/,/# END $RUNTIME_CAP PATH/d" "$HOME/.rvm/.rvmrc"
-        echo "$RUNTIME path settings removed from .rvmrc."
+    # Delete the setting in the .rvmshrc file
+    if grep -q "# START $RUNTIME_CAP PATH" "$HOME/.rvm/.rvmshrc"; then
+        echo "Removing $RUNTIME path settings from .rvmshrc..."
+        sed -i "/# START $RUNTIME_CAP PATH/,/# END $RUNTIME_CAP PATH/d" "$HOME/.rvm/.rvmshrc"
+        echo "$RUNTIME path settings removed from .rvmshrc."
     else
-        echo "$RUNTIME path settings not found in .rvmrc. Skipping removal."
+        echo "$RUNTIME path settings not found in .rvmshrc. Skipping removal."
     fi
 
     echo "All $RUNTIME versions and settings have been uninstalled successfully."
@@ -227,6 +229,8 @@ supported() {
   if [[ $1 == "help" ]]; then
     help_supported
     return
+  else
+    echo "$RUNTIME is supported"
   fi
 
 }
