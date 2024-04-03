@@ -26,24 +26,25 @@ get_runtime_version() {
 # runtime path eg: "pnpm" (for pnpm), "bin/node" for node
 
 update_runtime_path() {
-    # Rename vars
-    $RUNTIME = "$1"
-    $RUNTIME_PATH = "$2" 
-    $RUNTIME_CAP = $(echo "$RUNTIME" | tr '[:lower:]' '[:upper:]')
+  RUNTIME_NAME="$1"
+  RUNTIME_PATH="$2"
+  RUNTIME_VERSION="$3"
+  RUNTIME_NAME_CAP=$(echo "$RUNTIME_NAME" | tr '[:lower:]' '[:upper:]')  # Fixed variable reference
 
-    # Delete any old settings in the .rvmshrc file
-    delete_runtime_path "$RUNTIME"
+  # Delete any old settings in the .rvmshrc file
+  delete_runtime_path "$RUNTIME_NAME"  # Fixed variable reference
 
-    # Add new settings
-    echo "Adding new $RUNTIME path settings to .rvmshrc..."
-    echo ""                                                             >> "$HOME/.rvm/.rvmshrc"
-    echo "# START ${RUNTIME_CAP} PATH"                                  >> "$HOME/.rvm/.rvmshrc"
-    echo "export ${RUNTIME_CAP}_DIR=\"\$HOME/.$RUNTIME/\""                >> "$HOME/.rvm/.rvmshrc"
-    echo "[ -s \"\${${RUNTIME_CAP}_DIR}/$RUNTIME_PATH\" ] && . \"\${${RUNTIME_CAP}_DIR}/$RUNTIME_PATH\""        >> "$HOME/.rvm/.rvmshrc"
-    echo "# END ${RUNTIME_CAP} PATH"                                    >> "$HOME/.rvm/.rvmshrc"
-
+  # Use heredoc for adding new settings to ensure proper escaping and quoting
+  cat <<EOF >> "$HOME/.rvm/.rvmshrc"
+# START ${RUNTIME_NAME_CAP} PATH
+export ${RUNTIME_NAME_CAP}_DIR="\$HOME/.${RUNTIME_NAME}/v${RUNTIME_VERSION}"
+[ -s "\${${RUNTIME_NAME_CAP}_DIR}/${RUNTIME_PATH}" ] && . "\${${RUNTIME_NAME_CAP}_DIR}/${RUNTIME_PATH}"
+# END ${RUNTIME_NAME_CAP} PATH
+EOF
 }
 
+
+# Take runtime name as the first argument
 delete_runtime_path() {
     RUNTIME="$1"
     RUNTIME_CAP=$(echo "$RUNTIME" | tr '[:lower:]' '[:upper:]')
