@@ -93,53 +93,53 @@ esac
 echo "Detected shell: $SHELL_NAME"
 echo "Using profile file: $PROFILE"
 
-# Set the path to rvm in a new .rvmrc file in the .rvm folder
-echo "#RVM PATH START" >> "$HOME/.rvm/.rvmrc"
-echo "export RVM_DIR=\"\$HOME/.rvm/${latest_version}\"" >> "$HOME/.rvm/.rvmrc"
-echo "[ -s \"\$RVM_DIR/rvm.sh\" ] && . \"\$RVM_DIR/rvm.sh\"  # This loads rvmrc" >> "$HOME/.rvm/.rvmrc"
-echo "#RVM PATH END" >> "$HOME/.rvm/.rvmrc"
+# Set the path to rvm in a new .rvmshrc file in the .rvm folder
+echo "#RVM PATH START" >> "$HOME/.rvm/.rvmshrc"
+echo "export RVM_DIR=\"\$HOME/.rvm/${latest_version}\"" >> "$HOME/.rvm/.rvmshrc"
+echo "[ -s \"\$RVM_DIR/rvm.sh\" ] && . \"\$RVM_DIR/rvm.sh\"  # This loads rvmshrc" >> "$HOME/.rvm/.rvmshrc"
+echo "#RVM PATH END" >> "$HOME/.rvm/.rvmshrc"
 
 # Set path to rvmrc in shell rc file
 echo "#RVMRC PATH START" >> "$PROFILE"
-echo "[ -s \"\$HOME/.rvm/.rvmrc\" ] && . \"\$HOME/.rvm/.rvmrc\"  # This loads the .rvmrc file" >> "$PROFILE"
+echo "[ -s \"\$HOME/.rvm/.rvmshrc\" ] && . \"\$HOME/.rvm/.rvmshrc\"  # This loads the .rvmshrc file" >> "$PROFILE"
 echo "#RVMRC PATH END" >> "$PROFILE"
 
 # Check if jq is installed
-echo "Checking if jq is already available in the system"
+# echo "Checking if jq is already available in the system"
 
-if ! command -v jq &> /dev/null; then
-    echo " jq was not found in the system"
-    echo " rvmsh uses jq to parse responses from websites when checking versions"
+# if ! command -v jq &> /dev/null; then
+#     echo " jq was not found in the system"
+#     echo " rvmsh uses jq to parse responses from websites when checking versions"
 
-    # Detect the operating system to provide more specific installation instructions
-    case "$(uname -s)" in
-        Linux)
-            echo "You can install jq using rvm or your system package manager"
-            echo "rvmsh:         rvm install jq latest"
-            echo "Debian/Ubuntu: sudo apt-get install jq"
-            echo "openSUSE:      sudo zypper install jq"
-            echo "Fedora:        sudo dnf install jq"
-            echo "Arch:          sudo pacman -S jq"
-            ;;
-        Darwin)
-            echo "You can install jq using rvm or use another package manager"
-            echo "rvmsh:  rvm install jq latest"
-            echo "Brew:   brew install jq"
-            echo "Port:   port install jq"
-            echo "Fink:   fink install jq"
-            ;;
-        *)
-            echo "You can install jq using rvm or use another package manager"
-            echo "rvmsh: rvm install jq latest"
-            ;;
-    esac
+#     # Detect the operating system to provide more specific installation instructions
+#     case "$(uname -s)" in
+#         Linux)
+#             echo "You can install jq using rvm or your system package manager"
+#             echo "rvmsh:         rvm install jq latest"
+#             echo "Debian/Ubuntu: sudo apt-get install jq"
+#             echo "openSUSE:      sudo zypper install jq"
+#             echo "Fedora:        sudo dnf install jq"
+#             echo "Arch:          sudo pacman -S jq"
+#             ;;
+#         Darwin)
+#             echo "You can install jq using rvm or use another package manager"
+#             echo "rvmsh:  rvm install jq latest"
+#             echo "Brew:   brew install jq"
+#             echo "Port:   port install jq"
+#             echo "Fink:   fink install jq"
+#             ;;
+#         *)
+#             echo "You can install jq using rvm or use another package manager"
+#             echo "rvmsh: rvm install jq latest"
+#             ;;
+#     esac
 
-    # Exit the script if jq is not installed
-    exit 1
-else
-    echo "jq already available"
+#     # Exit the script if jq is not installed
+#     exit 1
+# else
+#     echo "jq already available"
 
-fi
+# fi
 
 source $PROFILE
 
