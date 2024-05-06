@@ -5,7 +5,7 @@
 
 # Name runtime here
 # Name should be all small letters, eg rvm, node, cargo, python
-$RUNTIME = ""
+$RUNTIME = "pnpm"
 
 ## ADD ##
 # Add installs either <specific version>, <latest>, <major> at a minimum
@@ -239,7 +239,6 @@ install_specific_version() {
     # Source the updated file
     source "$rvmshrc_path"
 
-    pnpm -v
 }
 
 ## UPDATE ##

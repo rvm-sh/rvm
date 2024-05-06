@@ -2,13 +2,15 @@
 
 # Common function to handle manager script delegation
 delegate_to_manager() {
-    local command=$1
-    local runtime_manager=$2
-    local manager_script="${HOME}/.rvm/runtimes/${runtime_manager}.sh"
-
-    local function_to_call="${command}"
+    command=$1
+    runtime_manager=$2
+    rvm_dir=$(sed -n 's/^export RVM_DIR="\(.*\)"/\1/p' "$HOME/.rvm/.rvmshrc")  # Gets the directory of the current script
+    manager_script="$rvm_dir/runtimes/${runtime_manager}.sh"
+    echo "Manager script: $manager_script"
+    function_to_call="${command}"
 
     if [ -f "$manager_script" ]; then
+        echo "Manager script: $manager_script"
         . "$manager_script"
         if command -v "$function_to_call" &> /dev/null; then
             echo "Calling $function_to_call $3 $4"
@@ -90,7 +92,7 @@ rvm() {
             else 
                 delegate_to_manager "$command" "$2" "${@:3}"
             fi
-
+            ;;
         version)
             # Directly handle the version command
             version "$@"
