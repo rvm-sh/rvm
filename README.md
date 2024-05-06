@@ -21,6 +21,9 @@ A runtime is the programme that is run to execute another script / command / tas
 ## Goals
 Current goal is to manage pnpm, npm, node, yarn, bun and other js runtimes / frameworks / compilers but hopefully will include other programming language such as python and rust.
 
+## Shell compliance
+Currently only tested on Bash on Linux. However the goal of the project is to support all major shells on Linux, MacOS, and Windows. Code is not POSIX compliant
+
 Primary principles:
  - Monolithic - rvm manages everything instead of modular plugins
  - Multi-language - aim to support multiple languages, such as python and rust
@@ -35,7 +38,7 @@ Future goals:
  - Support runtimes from other languages
  - Support autocheck / auto determiner to automatically determine and call the correct version
 
-nvm > rvmsh > asdf
+nvm < rvmsh < asdf
 * The goal of this project is to be a more-encompassing, monolithic version of nvm. If your need is something more versatile / modular, asdf may be a better option
 
 Currently supports:

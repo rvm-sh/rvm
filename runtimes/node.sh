@@ -1,6 +1,22 @@
 #!/bin/sh
 
-install() {
+# Add, update, upgrade and showall available should be manually written
+# Remove, removeall, supported, use, set should be standard
+# Standard functions should have their own shell script (so that we can change it without having to reimplement every script)
+
+# Name runtime here
+# Name should be all small letters, eg rvm, node, cargo, python
+$RUNTIME = ""
+
+## ADD ##
+# Add installs either <specific version>, <latest>, <major> at a minimum
+# Use custom implementation code according to source requirements
+# Must have the below 3 implementations but can also have additional commands such as future, forward, etc
+# rvm add node latest       - installs latest as defined by runtime maintainers
+# rvm add node 18           - installs latest version of node 18
+# rvm add node 18.14.12     - installs this specific version
+
+add() {
     # Check for at least one argument
     if [ -z "$1" ]; then
         help_install
@@ -224,492 +240,183 @@ install_specific_version() {
     tar -xzf "$download_dir/node.tar.gz" -C "$version_folder" --strip-components=1
 
 
-    #Delete the downloaded file
-    echo "Install complete. Clearing up download file"
-    rm -f "$download_dir/node.tar.gz"
-
     # Add Node.js path to PATH variable
-    echo "Updating bash PATH settings"
+    echo "Updating RVM PATH settings for Node.js"
+
+    # Define the .rvmrc path
+    rvmrc_path="$HOME/.rvm/.rvmrc"
+
     # Check for existing line and either update or create it
-    if grep -q "export PATH=\$HOME/.node/v[^:]*/bin:\$PATH" "$HOME/.rvm/.rvmrc"; then
-    # Update existing line
-        sed -i "s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=\$HOME/.node/$install_version/bin:\$PATH|" "$HOME/.rvm/.rvmrc"
+    if grep -q "export PATH=\$HOME/.node/v[^:]*/bin:\$PATH" "$rvmrc_path"; then
+        # Update existing line
+        sed -i "s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=\$HOME/.node/$install_version/bin:\$PATH|" "$rvmrc_path"
     else
-    # Create new line with comments
-        echo "# START RVM NODE PATH" >> "$HOME/.rvm/.rvmrc"
-        echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> "$HOME/.rvm/.rvmrc"
-        echo "# END RVM NODE PATH" >> "$HOME/.rvm/.rvmrc"
+        # Create new line with comments
+        echo "# START RVM NODE PATH" >> "$rvmrc_path"
+        echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> "$rvmrc_path"
+        echo "# END RVM NODE PATH" >> "$rvmrc_path"
     fi
 
-}
-
-uninstall() {
-    # Define variables
-    version="$1"  # Get the version to uninstall from the first argument
-    version_folder="$HOME/.node/v$version"
-
-    # Check if the version is installed
-    if [ ! -d "$version_folder" ]; then
-        echo "Node.js version $version is not installed. Currently only specific versions of node can be uninstalled via this function"
-        return 1
-    fi
-
-    # Remove the version folder
-    rm -rf "$version_folder"
-    if [ $? -ne 0 ]; then
-        echo "Error removing Node.js version $version."
-        return 1
-    fi
-
-    
-
-    # Check if the uninstalled version was set in PATH
-    current_path=$(echo $PATH | grep -oP "/.node/v\K[^:]*(?=/bin)")
-    echo "Current path:#${current_path}#"
-    echo "Version:#${version}#"
-    if [[ "$current_path" =~ "$version" ]]; then
-        echo "version matches path"
-        # Find the latest installed version
-        latest_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v*" | sed 's|.*/||' | sort -V | tail -n1)
-
-        # Check if any versions remain
-        echo "Latest version: ${latest_version}"
-        if [[ -z "$latest_version" ]]; then
-            # No versions left, remove PATH section
-            sed -i '/^# START RVM NODE PATH$/,/^# END RVM NODE PATH$/d' "$HOME/.rvm/.rvmrc"
-            echo "No remaining Node.js versions found. Removed PATH section entirely."
-        else
-            # Update PATH with the latest version
-            sed -i "s|/.node/v$current_path/bin|/.node/$latest_version/bin|g" "$HOME/.rvm/.rvmrc"
-            echo "PATH updated to use Node.js version $latest_version."
-        fi
-    else
-        echo "Version does not match path, no changes to PATH settings"
-    fi
-
-    # Unset the version path from PATH
-    PATH="${PATH%%:$HOME/.node/$version/bin}"
-    export PATH
-
-    echo "Node.js version $version uninstalled successfully."
-}
-
-prune() {
-    if [ -z "$1" ]; then
-        echo "Usage: rvm prune node [version]"
-        echo "version can be a major version (e.g., 18), a major.minor version (e.g., 18.10), or a specific version (e.g., 18.10.1)"
-        return 1
-    fi
-
-    local requested_version="$1"
-    local pruned_version=""
-    local available_versions=()
-    local default_version=""
-    local new_default_version=""
-
-    # List all installed versions
-    for dir in "$HOME/.node"/v*; do
-        if [ -d "$dir" ]; then
-            available_versions+=("$(basename "$dir")")
-        fi
-    done
-
-    # Determine the default version from .bashrc if set
-    if grep -q '# START RVM NODE PATH' "$HOME/.rvm/.rvmrc"; then
-        default_version=$(grep 'export PATH=$HOME/.node/' "$HOME/.rvm/.rvmrc" | grep -o 'v[0-9.]\+')
-    fi
-
-    # Prune older versions
-    for version in "${available_versions[@]}"; do
-        if [[ "$version" < "v${requested_version}" ]]; then
-            echo "Removing $version..."
-            rm -rf "$HOME/.node/$version"
-            pruned_version="$version"
-        fi
-    done
-
-    # If the default version was pruned, set a new default version
-    if [[ ! -z "$pruned_version" && "$default_version" == "$pruned_version" ]]; then
-        # Find the latest version as new default
-        new_default_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v*" | sort -V | tail -n1 | xargs basename)
-        
-        if [[ ! -z "$new_default_version" ]]; then
-            local node_path="$HOME/.node/$new_default_version/bin"
-            # Update .bashrc with new default version
-            if grep -q '# START RVM NODE PATH' "$HOME/.rvm/.rvmrc"; then
-                sed -i "/# START RVM NODE PATH/,/# END RVM NODE PATH/{s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=$node_path:\$PATH|}" "$HOME/.rvm/.rvmrc"
-            fi
-            echo "Default Node.js version updated to $new_default_version"
-        fi
-    elif [[ -z "$pruned_version" ]]; then
-        echo "No versions were pruned."
-    else
-        echo "Node.js versions older than $requested_version were removed."
-    fi
-}
-
-
-showall() {
-  # Accept and validate the argument
-  case "$1" in
-    installed)
-        type -t rvm >/dev/null && versions=$(find "$HOME/.node" -maxdepth 1 -type d -name "v*")
-        # Check if any versions were found
-        if [[ -z "$versions" ]]; then
-            echo "No Node.js versions are installed."
-            return 0
-        fi
-        # Print each version with the corresponding node command
-        echo "These are all the node versions installed"
-        for version_folder in $versions; do
-            version=$(basename "$version_folder")
-            version=$(echo "$version" | cut -d'v' -f2-)
-
-            echo "Version: $version"
-            echo "  Command to set temporarily: rvm use node $version"
-            echo "  Command to set as default: rvm set node $version"
-        done
-        ;;
-    available)
-        # Download the index file and capture versions
-        versions=$(wget -q -O - https://nodejs.org/download/release/index.tab | grep -Eo '^v[0-9]+\.[0-9]+\.[0-9]+' | sed 's/^v//')
-
-        # Check if any versions were found
-        if [[ -z "$versions" ]]; then
-            echo "No Node.js versions available were found from nodejs.org. Check that access to the web is not restricted / affected."
-            return 0
-        fi
-
-        # Initialize filtered_versions array
-        declare -a filtered_versions
-
-        # Check if user specified a major version filter
-        if [[ $# -gt 1 && "$2" =~ ^[0-9]+$ ]]; then
-        # Filter versions based on major version
-        for version in $versions; do
-            major_version="${version%%.*}"
-            if [[ "$major_version" == "$2" ]]; then
-            filtered_versions+=("$version")
-            fi
-        done
-
-        # Handle no matching versions
-        if [[ ${#filtered_versions[@]} -eq 0 ]]; then
-            echo "No Node.js versions available with major version $2."
-            return 0
-        fi
-
-        # Print filtered versions
-        echo "Available Node.js versions with major version $2:"
-        for version in "${filtered_versions[@]}"; do
-            echo "  - $version"
-        done
-        else
-        # No specific major version filter provided, print all available versions
-        echo "All available Node.js versions:"
-        for version in $versions; do
-            echo "  - $version"
-        done
-        fi
-        ;;
-    *)
-      help_showall
-      return 1
-      ;;
-  esac
-}
-
-
-
-removeall() {
-    echo "Uninstalling all Node.js versions..."
-
-    # Delete the .node folder
-    if [ -d "$HOME/.node" ]; then
-        echo "Removing the .node folder..."
-        rm -rf "$HOME/.node"
-        echo ".node folder removed successfully."
-    else
-        echo "No .node folder found. Skipping removal."
-    fi
-
-    # Delete the setting in the .bashrc file
-    if grep -q '# START RVM NODE PATH' "$HOME/.rvm/.rvmrc"; then
-        echo "Removing Node.js path settings from .rvmrc..."
-        sed -i '/# START RVM NODE PATH/,/# END RVM NODE PATH/d' "$HOME/.rvm/.rvmrc"
-        echo "Node.js path settings removed from .rvmrc."
-    else
-        echo "Node.js path settings not found in .rvmrc. Skipping removal."
-    fi
-
-    echo "All Node.js versions and settings have been uninstalled successfully."
-}
-
-update() {
-    # Check for at least one argument
-    if [ -z "$1" ]; then
-        help_update
-        return 1
-    fi
-
-    case "$1" in
-        current)
-            # Extract the current default Node.js version from PATH
-            current_major_version=$(echo $PATH | grep -oP "\.node/v\K[0-9]+(?=\.[0-9]+/[0-9]+/bin)")
-            if [ -z "$current_major_version" ]; then
-                echo "No default Node.js version found in PATH. Consider specifying a version to update."
-                return 1
-            fi
-
-            # Call install function with the major version of the current default Node.js version
-            echo "Updating Node.js within the major version line: $current_major_version"
-            install "$current_major_version"
-            ;;
-        latest)
-            # Directly call install with 'latest'
-            install latest
-            ;;
-        latest-*)
-            # Handle LTS versions update: latest-hydrogen, latest-iron, etc.
-            install "$1"
-            ;;
-        *)
-            # Handle specific version updates: node 18, node 18.10, etc.
-            install "$1"
-            ;;
-    esac
-}
-
-use() {
-    if [ -z "$1" ]; then
-        help_use
-        return 1
-    fi
-
-    local requested_version="$1"
-    local version_folder=""
-    local match_version=""
-
-    # Handle different version specifications
-    if [[ "$requested_version" =~ ^[0-9]+$ ]]; then
-        # Major version: find the latest installed version of this major
-        match_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v${requested_version}.*" | sort -V | tail -n1)
-    elif [[ "$requested_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
-        # Major.minor version: find the latest installed version of this major.minor
-        match_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v${requested_version}.*" | sort -V | tail -n1)
-    elif [[ "$requested_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        # Specific version: use this specific version
-        match_version="$HOME/.node/v${requested_version}"
-    fi
-
-    if [ -z "$match_version" ] || [ ! -d "$match_version" ]; then
-        echo "Node.js version matching '$requested_version' is not installed."
-        return 1
-    fi
-
-    version_folder=$(basename "$match_version")
-
-    # Construct the path to the Node.js binaries for the matched version
-    local node_path="$HOME/.node/$version_folder/bin"
-
-    # Add the matched Node.js version to the beginning of the PATH for the current session
-    PATH="$node_path:$PATH"
-
-    echo "Using Node.js $version_folder. This change is temporary and will reset after the terminal session ends."
-    # Optionally, you can display the version being used by executing 'node -v'
     node -v
 }
 
-set() {
-    if [ -z "$1" ]; then
-        help_set
-        return 1
-    fi
+## UPDATE ##
+# Update installs latest of the major version being used and makes it the default
+# rvm update node
+# will update to the latest node 18 if that is the major version set as default 
+# Use custom implementation code according to source requirements
 
-    local requested_version="$1"
-    local version_folder=""
-    local match_version=""
-
-    # Handle different version specifications
-    if [[ "$requested_version" =~ ^[0-9]+$ ]]; then
-        # Major version: find the latest installed version of this major
-        match_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v${requested_version}.*" | sort -V | tail -n1)
-    elif [[ "$requested_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
-        # Major.minor version: find the latest installed version of this major.minor
-        match_version=$(find "$HOME/.node" -maxdepth 1 -type d -name "v${requested_version}.*" | sort -V | tail -n1)
-    elif [[ "$requested_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        # Specific version: use this specific version
-        match_version="$HOME/.node/v${requested_version}"
-    fi
-
-    if [ -z "$match_version" ] || [ ! -d "$match_version" ]; then
-        echo "Node.js version matching '$requested_version' is not installed."
-        return 1
-    fi
-
-    version_folder=$(basename "$match_version")
-
-    # Construct the path to the Node.js binaries for the matched version
-    local node_path="$match_version/bin"
-
-    # Check if the .bashrc already contains Node path settings and replace them
-    if grep -q '# START RVM NODE PATH' "$HOME/.rvm/.rvmrc"; then
-        # The .bashrc contains existing Node.js path settings; replace them
-        sed -i "/# START RVM NODE PATH/,/# END RVM NODE PATH/{s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=$node_path:\$PATH|}" "$HOME/.rvm/.rvmrc"
-    else
-        # The .bashrc does not contain Node.js path settings; add them
-        echo "# START RVM NODE PATH" >> "$HOME/.rvm/.rvmrc"
-        echo "export PATH=$node_path:\$PATH" >> "$HOME/.rvm/.rvmrc"
-        echo "# END RVM NODE PATH" >> "$HOME/.rvm/.rvmrc"
-    fi
-
-    echo "Node.js $version_folder has been set as your default node version"
+update () {
+  if [[ $1 == "help" ]]; then
+    help_update
+    return
+  fi
 }
 
 
 
+## UPGRADE ##
+# Upgrade adds the latest version and makes it the default
+# rvm upgrade node
+# Use custom implementation code according to source requirements
 
-help_install () {
-    cat <<EOF
-To use this command, you can type in:
-    Latest(as specified by node):
-    rvm install node latest
+upgrade () {
+  if [[ $1 == "help" ]]; then
+    help_update
+    return
+  fi
+}
 
-    Latest of major version:
-    rvm install node 18
 
-    Latest of major & minor version:
-    rvm install node 18.10
+## SHOWALL ##
+# Showall <installed> shows all installed versions of runtime
+# rvm showall node
+# rvm showall node installed
+# rvm showall node available
+showall() {
+  if [[ $# -eq 0 ]]; then
+    help_showall
+    return
+  fi
 
-    Specific version:
-    rvm install node 18.10.11
+  if [[ $1 == "help" ]]; then
+    help_showall
+    return
+  fi
 
-    Latest of specific LTS:
-    rvm install node latest-iron
-    rvm install node latest-hydrogen
-EOF
+}
 
+## REMOVE ##
+remove () {}
+
+## REMOVEALL ##
+removeall () {}
+
+## SUPPORTED ##
+# Returns positive confirmation that runtime is supported
+# rvm supported node
+supported() {
+  if [[ $1 == "help" ]]; then
+    help_supported
+    return
+  else
+    echo "$RUNTIME is supported"
+  fi
+
+}
+
+## USE ##
+
+
+## SET ##
+
+
+
+
+
+# ALL HELP FUNCTIONS
+
+# Help displays the generic help for 
+# rvm help node
+help() {
+    echo "Welcome to the help section for $RUNTIME management via rvm"
+    echo "rvm supports the following commands for managing the $RUNTIME runtime: add, remove, update, upgrade, removeall, showall, use, set, help, supported, prune"
+    echo "rvm <command> $RUNTIME help - displays the help for the specific command. e.g:"
+    echo "rvm add $RUNTIME help - displays the help for the add command"
+    echo "rvm remove $RUNTIME help - displays the help for the remove command"
+
+    echo "To run a command, use the following syntax:"
+    echo "rvm supported $RUNTIME -  returns positive confirmation that $RUNTIME is supported"
+    echo "rvm add $RUNTIME latest - installs the latest version of the runtime, as define by the runtime maintainers"
+    echo "rvm showall $RUNTIME installed - lists all installed versions of the runtime"
+    echo "rvm showall $RUNTIME available - lists all available versions of the runtime from the runtime repository"
+}
+
+help_add () {
+    echo "Add installs either <specific version>, <latest>, <major_version> depending on availability by runtime managers"
+    echo "rvm add $RUNTIME <version> - installs the specific version of $RUNTIME. eg:"
+    echo "rvm add $RUNTIME latest - installs the latest version of $RUNTIME"
+    echo "rvm add $RUNTIME 8 - installs the latest version of $RUNTIME 8"
+    echo "rvm add $RUNTIME 8.14.12 - installs this specific version of $RUNTIME 8.14.12"
+}
+
+help_update() {
+    echo "Update installs latest of the major version being used and makes it the default"
+    echo "rvm update $RUNTIME - e.g updates to the latest version of $RUNTIME v8 if that is the major version set as default"
+}
+
+help_upgrade() {
+    echo "Upgrade installs the latest version of $RUNTIME and makes it the default. Unlike the update command, it will jump major versions if there is a newer major version available"
+    echo "rvm update $RUNTIME"
+}
+
+help_use() {
+    echo "Use sets the specific <major> or <major_minor_rev> version of the runtime temporarily. Resets on restart of os. eg."
+    echo "rvm use $RUNTIME <version>"
+    echo "rvm use $RUNTIME 18       - will use the latest version of $RUNTIME 18"
+    echo "rvm use $RUNTIME 18.14.12 - will set the specific version(18.14.12) of $RUNTIME requested"
+}
+
+help_set() {
+    echo "Set sets the specified <major> or <major_minor_rev> version as the default version. eg."
+    echo "rvm set $RUNTIME <version>"
+    echo "rvm set $RUNTIME 18       - will set the latest version of $RUNTIME 18 as the default"
+    echo "rvm set $RUNTIME 18.14.12 - will set the specific version(18.14.12) of $RUNTIME requested as the default"
+}
+
+supported_help() {
+    echo "Supported returns positive confirmation that $RUNTIME is supported. e.g.:"
+    echo "rvm supported $RUNTIME"
+}
+
+help_showall() {
+    echo "Showall shows all installed or available versions of runtime depending on the command option"
+    echo "rvm showall $RUNTIME installed - lists all installed versions of $RUNTIME"
+    echo "rvm showall $RUNTIME available - lists all available versions of $RUNTIME from the runtime repository"
+}
+
+help_remove()  {
+    echo "Remove removes <specific_version> and <major_version> versions only"
+    echo "rvm remove $RUNTIME <version> - removes the specific version of $RUNTIME. eg:"
+    echo "rvm remove $RUNTIME 8         - removes the versions of $RUNTIME that has the major version 8"
+    echo "rvm remove $RUNTIME 8.14.12   - removes this specific version of $RUNTIME 8.14.12"
+    echo "see prune command for removing all versions older than a specific version"
+    echo "see removeall command for removing all versions of $RUNTIME"
+}
+
+help_removeall() {
+    echo "Removeall removes all the versions of $RUNTIME added to system. eg."
+    echo "rvm removeall $RUNTIME"
+}
+
+help_prune() {
+    echo "Prune all versions of $RUNTIME older than the stated version"
+    echo "rvm prune $RUNTIME <version>  - removes all versions of $RUNTIME older than the stated version. eg:"
+    echo "rvm prune $RUNTIME 18         - removes all versions of $RUNTIME older than the latest version of $RUNTIME 18 (not including any versions 18)"
+    echo "rvm prune $RUNTIME 18.10      - removes all versions of $RUNTIME older than the latest version of $RUNTIME 18.10 (not including version 18.10)"
+    echo "rvm prune $RUNTIME 18.10.14   - removes all versions of $RUNTIME older than the latest version of $RUNTIME 18.10.14 (not including version 18.10.14)"
 }
 
 
 
-help_showall () {
-    cat <<EOF
-    To use this command, you can type in:
-    Show all installed
-    rvm showall node installed
-
-    Show all available at nodejs repository for installation
-    rvm showall node available
-
-    Show all available major version at nodejs repository for installation
-    rvm showall node available 18 
-EOF
-
-}
-
-help_update () {
-    cat <<EOF
-    To use this command, you can type in:
-    Update current default version(with latest of the same major version)
-    rvm update node current
-
-    Update the latest version of node (as per the nodejs website)
-    rvm update node latest
-
-    Update the latest version of an lts
-    rvm update node latest-hydrogen
-    rvm update node latest-iron
-
-    Update a specific major / minor version of node
-    rvm update node 18
-    rvm update node 18.10
-
-    The update function will call the install function.
-    If a version does not exist, it will proceed to install it
-
-    Note that on completion, the path to the version will be set to the new installed version
-EOF
-
-}
-
-help_use () {
-    cat <<EOF
-    This command sets a specific specified version temporarily.
-    The default version will revert back to the one set in your terminal settings file once you restart your terminal
-
-    To change your default permanetly, call the rvm set node <version>
-
-    To use this command, you can type in:
-    Latest installed of major version
-    rvm use node 18
-
-    Latest installed of major/minor version
-    rvm use node 18.10
-
-    Specific version
-    rvm use node 18.10.0
-
-    rvm currently does not track lts versions locally, so it does not know which
-    are lts versions and which aren't
-EOF
-
-}
-
-help_set () {
-    cat <<EOF
-    This command sets the default version in your system.
-
-    To change your default temporarily, call the rvm use node <version>
-
-    To use this command, you can type in:
-    Latest installed of major version
-    rvm set node 18
-
-    Latest installed of major/minor version
-    rvm set node 18.10
-
-    Specific version
-    rvm set node 18.10.0
-
-    rvm currently does not track lts versions locally, so it does not know which
-    are lts versions and which aren't
-EOF
-
-}
-
-help () {
-    cat <<EOF
-    Welcome to the node help section
-
-    Usage: rvm [command] node [options]
-
-    The runtime manager for node has the following options available:
-        add / install       Install a version of the runtime
-        remove / uninstall  Uninstall a specific version of the runtime
-        prune               Uninstall all older versions of a runtime
-        showall / all       Show all installed versions of a runtime
-        removeall           Uninstallall  Uninstall all versions of a runtime
-        update              Update the default runtime to the latest major version
-        use                 Temporarily set a specific runtime version
-        set / default       Set the default version of runtime
-        help                Show this help message
-        version             Show the version of this script
-
-    Use the commands such as:
-    rvm add node latest
-    rvm remove node 18.14.0
-    rvm showall node
-
-
-    You can get specific help for the commands (if necessary or available) by calling the commands with the help option
-
-    rvm add node help
-
-    Some commands, such as add, require you to specify the option. If you do not specify the options, rvmsh will display the command options
-
-    
-EOF
-
-}
 
