@@ -5,7 +5,7 @@
 
 # Name runtime here
 # Name should be all small letters, eg rvm, node, cargo, python
-$RUNTIME = ""
+$RUNTIME = "pnpm"
 
 ## ADD ##
 # Add installs either <specific version>, <latest>, <major> at a minimum

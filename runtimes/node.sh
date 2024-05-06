@@ -6,7 +6,7 @@
 
 # Name runtime here
 # Name should be all small letters, eg rvm, node, cargo, python
-$RUNTIME = ""
+$RUNTIME = "node"
 
 ## ADD ##
 # Add installs either <specific version>, <latest>, <major> at a minimum
@@ -307,10 +307,10 @@ showall() {
 }
 
 ## REMOVE ##
-remove () {}
+# remove () {}
 
 ## REMOVEALL ##
-removeall () {}
+# removeall () {}
 
 ## SUPPORTED ##
 # Returns positive confirmation that runtime is supported
