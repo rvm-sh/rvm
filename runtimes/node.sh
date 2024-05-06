@@ -257,7 +257,6 @@ install_specific_version() {
         echo "# END RVM NODE PATH" >> "$rvmrc_path"
     fi
 
-    node -v
 }
 
 ## UPDATE ##

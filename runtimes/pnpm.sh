@@ -239,7 +239,6 @@ install_specific_version() {
     # Source the updated file
     source "$rvmshrc_path"
 
-    pnpm -v
 }
 
 ## UPDATE ##
