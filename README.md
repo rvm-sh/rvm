@@ -2,7 +2,7 @@
 ## Runtime Version Manager
 
 >[!WARNING]
-> Currently only supports bash on linux 
+> Currently only tested on bash on linux 
 
 > [!CAUTION]
 > Not ready for production use, functions may not yet have been implemented or even work
@@ -11,7 +11,7 @@
 ## Introduction and Motivations
 rvmsh was created because I had trouble in the course of my programing experience, from having issues managing new runtimes, multiple runtime managers, issues with packages, etc. 
 
-I ultimately hope to be able to use this to manage all my runtimes, whether it be js, python, rust, etc. Hopefully, I would also be able to have some kind of auto determiner that just decides what the correct runtime version to use and to call that version.
+The primary goal is to be able to use this to manage all runtimes, whether it be js, python, rust, etc. If possible, would also like to have some kind of auto determiner that just decides what the correct runtime version to use and to call that version(not currently available).
 
 Inspired by the simplicity of nvm.
 
@@ -21,22 +21,25 @@ A runtime is the programme that is run to execute another script / command / tas
 ## Goals
 Current goal is to manage pnpm, npm, node, yarn, bun and other js runtimes / frameworks / compilers but hopefully will include other programming language such as python and rust.
 
+## Shell compliance
+Currently only tested on Bash on Linux. However the goal of the project is to support all major shells on Linux, MacOS, and Windows. Code is not POSIX compliant
+
 Primary principles:
  - Monolithic - rvm manages everything instead of modular plugins
- - Multi OS support - currently supports Linux, MacOS, WSL
- - Multi-shell support - currently only supports bash. Plan for zsh and other shells
- - Multi-language - aim to support languages that I use, such as python and rust
+ - Multi-language - aim to support multiple languages, such as python and rust
  - Runtime agnostic - aim to support as many runtimes as possible to encourage ecosystem growth / experimentation
  - Clean - all installation and usage files / folders / settings predictable, self-contained and leaves no trace on uninstall
  - Maximal compatibility - aims to be maximally compatible 
  - Minimal dependency - minimise dependency on external packages that do not tend to come standard in unix-based systems 
 
 Future goals:
+ - Support MacOS, Windows, and other architectures
+ - Support multiple shells
  - Support runtimes from other languages
  - Support autocheck / auto determiner to automatically determine and call the correct version
 
-nvm > rvmsh > asdf
-* The goal of this project is to be a more-encompassing, monolithic version of nvm. 
+nvm < rvmsh < asdf
+* The goal of this project is to be a more-encompassing, monolithic version of nvm. If your need is something more versatile / modular, asdf may be a better option
 
 Currently supports:
  - jq
@@ -86,21 +89,21 @@ wget -qO- https://raw.githubusercontent.com/rvm-sh/rvm/main/install.sh | zsh -
 
 ### Install the latest version of a runner
 ```
-rvm add pnpm@latest
+rvm add pnpm latest
 ```
 also the `install` argument works too
 ```
-rvm install pnpm@latest
+rvm install pnpm latest
 ```
 
 ### Install a specific version of a runner
 Use either `add` or `install`
 ```
-rvm add pnpm@8
+rvm add pnpm 8
 ```
 or even
 ```
-rvm install pnpm@8.14.0
+rvm install pnpm 8.14.0
 ```
 
 ### Upgrade a runner
@@ -112,11 +115,11 @@ rvm upgrade pnpm
 ### Set a specific runner version as default
 Use either `set` or `use`
 ```
-rvm set pnpm@18.14.0
+rvm set pnpm 18.14.0
 ```
 or
 ```
-rvm use pnpm@18.14.0
+rvm use pnpm 18.14.0
 ```
 
 ### Show version of default runner
@@ -131,7 +134,7 @@ pnpm build
 ```
 Use a specific runner:
 ```
-pnpm@8.14.0 build
+pnpm 8.14.0 build
 ```
 
 ### Show all installed versions of a specific runner
@@ -146,13 +149,13 @@ rvm all pnpm
 
 ### Remove specific version of a runner
 ```
-rvm remove pnpm@8.14.0
+rvm remove pnpm 8.14.0
 ```
 
 ### Prune all older versions of a runner
 This deletes all versions of a runner older than the specified runner (specified version not included)
 ```
-rvm prune pnpm@6.12.4
+rvm prune pnpm 6.12.4
 ```
 
 ### Remove all versions of a runner

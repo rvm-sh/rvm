@@ -17,10 +17,9 @@ delegate_to_manager() {
             echo "Function $function_to_call not found in $manager_script"
         fi
     else
-        echo "Manager script for $runtime_manager not found"
+        echo "Manager script for $runtime_manager not found. This runtime is not supported"
     fi
 }
-
 
 # Define the rvm function
 rvm() {
@@ -36,14 +35,14 @@ rvm() {
         add | install)
             # Map 'add' and 'install' to the same function
             # Install a version of the runtime
-            [ "$command" = "add" ] && command="install"
+            [ "$command" = "install" ] && command="add"
             delegate_to_manager "$command" "$2" "${@:3}"
             source_settings
             ;;
         remove | uninstall)
             # Map 'remove' and 'uninstall' to the same function
             # Uninstall a specific version of the runtime
-            [ "$command" = "remove" ] && command="uninstall"
+            [ "$command" = "uninstall" ] && command="remove"
             delegate_to_manager "$command" "$2" "${@:3}"
             source_settings
             ;;

@@ -1,4 +1,3 @@
-#!/bin/sh
 
 # Add, update, upgrade and showall available should be manually written
 # Remove, removeall, supported, use, set should be standard
@@ -26,175 +25,157 @@ add() {
 
     # Determine os and arch
     local os=$(uname -s | tr '[:upper:]' '[:lower:]')
+    case "$os" in
+        darwin) os="macos" ;;
+        linux) os="linux" ;;
+        *) 
+            echo "Sorry, your distribution is not supported by pnpm" 
+            return 1
+            ;;
+    esac
     echo "OS detected: ${os}"
+
     local arch=$(uname -m)
     echo "Arch detected: ${arch}"
-    case "$arch" in
-        x86_64) arch="x64" ;;
-        aarch64) arch="arm64" ;;
+    case "${arch}" in
+        x86_64 | amd64) arch="x64" ;;
+        aarch64 | arm64) arch="arm64" ;;
+        *)
+            echo "Sorry, your architecture is not supported by pnpm"
+            return 1
+            ;;
     esac
 
     # determine the version to install
-    local requested_version="$1" 
-    if [[ $requested_version == latest ]]; then
-        
-        read -r install_version link <<< $(get_latest_node_version "$os" "$arch")
+    local requested_version="$1"
+    local major_version_requested="$2"
 
-        if [ -z "$install_version" ] || [ -z "$link" ]; then
-            echo "Failed to find the latest Node.js version for $os $arch"
-            return 1
+    if [[ $requested_version == latest ]]; then
+        if [[ $major_version_requested -ne 0 ]]; then
+            echo "Requested latest ${major_version_requested}. Calling latest version of ${major_version_requested} "
+            read -r install_version link <<< $(get_latest_major_version "$major_version_requested" "$os" "$arch")
+
+            if [ -z "$install_version" ] || [ -z "$link" ]; then
+                echo "Failed to find a valid latest version for major version ${major_version_requested} requested on the pnpm server"
+                echo "If this version has not been released yet, you may be able to install alpha / beta versions via"
+                echo "rvm install pnpm next ${major_version_requested}"
+                return 1
+            fi
+
+        else
+            echo "No major version defined, looking up latest pnpm version"
+            read -r install_version link <<< $(get_latest_pnpm_version "$os" "$arch")
+
+            if [ -z "$install_version" ] || [ -z "$link" ]; then
+                echo "Failed to find a valid latest version of pnpm from the pnpm server. This is likely an issue from pnpm's server response"
+                return 1
+            fi
         fi
-        echo "Latest version requested. Installing node ${install_version}"
+
+        
+        echo "Latest version requested. Installing pnpm ${install_version}"
     elif [[ $requested_version =~ ^[0-9]+$ ]]; then
+        echo "Requested ${requested_version}"
         read -r install_version link <<< $(get_latest_major_version $requested_version $os $arch)
 
         if [ -z "$install_version" ] || [ -z "$link" ]; then
-            echo "Failed to find the latest Node.js version for $os $arch"
+            echo "Failed to find the latest pnpm version for $os $arch"
             return 1
         fi
-    elif [[ $requested_version =~ ^[0-9]+\.[0-9]+$ ]]; then
-        read -r install_version link <<< $(get_latest_major_minor_version $requested_version $os $arch)
+
+    elif [[ $requested_version == next ]]; then
+        if [ -z "$major_version_requested" ]; then
+            echo "A major version number must be specified for next version installations, e.g:"
+            echo "rvm install pnpm next 9"
+            return 1
+        fi
+
+        read -r install_version link <<< $(get_next_major_version $major_version_requested $os $arch)
 
         if [ -z "$install_version" ] || [ -z "$link" ]; then
-            echo "Failed to find the latest Node.js version for $os $arch"
+            echo "Failed to find the latest next version of pnpm for the requested major version of pnpm for $os $arch"
             return 1
         fi
 
     elif [[ $requested_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        file_name="node-v${requested_version}-${os}-${arch}.tar.gz"
-        install_version="v${requested_version}"
-        link="https://nodejs.org/download/release/v${requested_version}/${file_name}"
+        version="${requested_version}"
+        link="https://github.com/pnpm/pnpm/releases/download/v${requested_version}/pnpm-${os}-${arch}"
 
-    elif [[ $requested_version =~ ^latest- ]]; then
-        read -r install_version link <<< $(get_latest_lts_version $requested_version $os $arch)
+        version_json="$(download "https://registry.npmjs.org/@pnpm/exe/${version}")"
 
-        echo "Latest requested version for ${requested_version} determined: ${install_version}"
+        # Check for "version not found" error in the JSON response
+        if echo "$version_json" | grep -q "version not found: ${version}"; then
+            echo "Version not found: ${major_version}."
+            return 1
+        fi
+
+
     else
         echo "Invalid version specification: $requested_version"
-        help_install
         return 1
     fi
 
     install_specific_version $install_version $link
 }
 
-get_latest_node_version() {
+get_latest_pnpm_version() {
     local os="$1"
     local arch="$2"
-    local url="https://nodejs.org/dist/latest/"
 
-    # Use wget to fetch the directory listing
-    local html_content=$(wget -qO- "$url")
+    version_json="$(download "https://registry.npmjs.org/@pnpm/exe")"
+    version="$(printf '%s' "${version_json}" | tr '{' '\n' | awk -F '"' '/latest/ { print $4 }')"
+    link="https://github.com/pnpm/pnpm/releases/download/v${version}/pnpm-${os}-${arch}"
 
-    # Initialize an empty string for the version and link
-    local version=""
-    local link=""
-
-    # Parse the latest version and corresponding download link
-    echo "$html_content" | grep -Eo 'node-v[0-9.]+-'${os}'-'${arch}'\.tar\.gz' | while read -r line; do
-        if [[ "$line" =~ node-v[0-9.]+-${os}-${arch}\.tar\.gz ]]; then
-            # Extract version including the 'v' prefix
-            version=$(echo "$line" | grep -Eo 'v[0-9.]+')
-            link="${url}${line}"
-            echo "$version $link"
-            return 0  # Ensure to return 0 to signal success
-        fi
-    done
-
-    # Check if the version and link were found
-    if [[ -z "$version" || -z "$link" ]]; then
-        echo "Failed to find the latest Node.js version for $os $arch"
-        return 1
-    fi
+    echo "$version $link"
+    return 0
 }
 
 
-get_latest_major_version(){
+get_latest_major_version() {
     local major_version="$1"
     local os="$2"
     local arch="$3"
-    local url="https://nodejs.org/download/release/latest-v${major_version}.x/"
 
-    # Use wget to fetch the directory listing
-    local html_content=$(wget -qO- "$url")
+    version_json="$(download "https://registry.npmjs.org/@pnpm/exe")"
+    version="$(printf '%s' "${version_json}" | tr '{' '\n' | awk -F '"' '/latest-${major_version}/ { print $4 }')"
 
-    # Initialize an empty string for the version and link
-    local version=""
-    local link=""
-
-    # Parse the latest version and corresponding download link
-    echo "$html_content" | grep -Eo 'node-v[0-9.]+-'${os}'-'${arch}'\.tar\.gz' | while read -r line; do
-        if [[ "$line" =~ node-v[0-9.]+-${os}-${arch}\.tar\.gz ]]; then
-            # Extract version including the 'v' prefix
-            version=$(echo "$line" | grep -Eo 'v[0-9.]+')
-            link="${url}${line}"
-            echo "$version $link"
-            return 0  # Ensure to return 0 to signal success
-        fi
-    done
-
-    # Check if the version and link were found
-    if [[ -z "$version" || -z "$link" ]]; then
-        echo "Failed to find the latest Node.js version for $os $arch"
-        return 1
-    fi
-}
-
-get_latest_major_minor_version() {
-    local major_minor_version="$1"
-    local os="$2"
-    local arch="$3"
-    local url="https://nodejs.org/download/release/index.tab"
-
-    # Fetch and parse the index.tab for the latest patch version of the major.minor version
-    local version_info=$(wget -qO- "$url" | awk -v ver="$major_minor_version" -F'\t' '
-    $1 ~ "^v" ver { print $1 }
-    ' | sort -V | tail -n1)
-
-    if [ -z "$version_info" ]; then
-        echo "Failed to find the latest Node.js version with major.minor version $major_minor_version"
-        return 1
-    fi
-
-    local version=$(echo "$version_info" | grep -Eo 'v[0-9.]+')
-    local file_name="node-${version}-${os}-${arch}.tar.gz"
-    local link="https://nodejs.org/download/release/${version}/${file_name}"
+    link="https://github.com/pnpm/pnpm/releases/download/v${version}/pnpm-${os}-${arch}"
 
     echo "$version $link"
+    return 0
 }
 
 
-
-get_latest_lts_version() {
-    local lts_version="$1"
+get_next_major_version() {
+    local major_version="$1"
     local os="$2"
     local arch="$3"
-    local url="https://nodejs.org/download/release/${lts_version}/"
 
-    # Use wget to fetch the directory listing
-    local html_content=$(wget -qO- "$url")
+    version_json="$(download "https://registry.npmjs.org/@pnpm/exe/next-$major_version")"
 
-    # Initialize an empty string for the version and link
-    local version=""
-    local link=""
-
-    # Parse the latest version and corresponding download link
-    echo "$html_content" | grep -Eo 'node-v[0-9.]+-'${os}'-'${arch}'\.tar\.gz' | while read -r line; do
-        if [[ "$line" =~ node-v[0-9.]+-${os}-${arch}\.tar\.gz ]]; then
-            # Extract version including the 'v' prefix
-            version=$(echo "$line" | grep -Eo 'v[0-9.]+')
-            link="${url}${line}"
-            echo "$version $link"
-            return 0  # Ensure to return 0 to signal success
-        fi
-    done
-
-    # Check if the version and link were found
-    if [[ -z "$version" || -z "$link" ]]; then
-        echo "Failed to find the latest Node.js version for $os $arch"
+    # Check for "version not found" error in the JSON response
+    if echo "$version_json" | grep -q "version not found: next-${major_version}"; then
+        echo "Version not found: next-${major_version}."
         return 1
     fi
+
+    # Attempt to parse the version number from the JSON, including pre-release versions
+    version=$(echo "$version_json" | grep -oP '"version":"\K[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+)?' | head -n 1)
+
+
+    # Check if the version variable is set and follows the expected format
+    if [[ -z "$version" || ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "Failed to parse a valid version from the JSON data."
+        return 1
+    fi
+
+    link="https://github.com/pnpm/pnpm/releases/download/v${version}/pnpm-${os}-${arch}"
+
+    echo "$version $link"
+    return 0
 }
+
+
 
 
 # this is the final function call for install
@@ -203,61 +184,62 @@ install_specific_version() {
     install_version=$1 
     link=$2
 
-    # Check if .node folder exists
-    if [ ! -d "$HOME/.node" ]; then
-        mkdir -p "$HOME/.node"
-        echo "Created .node folder in your home directory."
+    # Check if .pnpm folder exists
+    if [ ! -d "$HOME/.pnpm" ]; then
+        mkdir -p "$HOME/.pnpm"
+        echo "Created .pnpm folder in your home directory."
     fi
 
 
     # Check if folder named v<version> exists
     echo "Checking if version already exists..."
-    version_folder="$HOME/.node/${install_version}"
+    version_folder="$HOME/.pnpm/v${install_version}"
         if [ -d "$version_folder" ]; then
-        echo "Node.js version $install_version is already installed. To reinstall, remove this version first"
+        echo "pnpm version $install_version is already installed. To reinstall, remove this version first"
         return 1
     fi
 
 
     # Download the file using wget
     echo "Downloading file..."
-    download_dir="$HOME/.node/downloads"
+    download_dir="$HOME/.pnpm/v${install_version}"
     if [ ! -d "$download_dir" ]; then
         mkdir -p "$download_dir"
     fi
     
-    wget -qO "$download_dir/node.tar.gz" "$link"
+    wget -qO "$download_dir/pnpm" "$link"
     if [ $? -ne 0 ]; then
         echo "Failed to download the file."
         return 1
     fi
 
-    echo "Download complete. Installing version."
-    mkdir -p "$version_folder"
+    # Make the downloaded program executable
+    chmod +x "$download_dir/pnpm"
 
-    # unzip the file, rename the folder to its version (ie, v20.11.0)
-    # Use tar to extract with custom directory name
-    tar -xzf "$download_dir/node.tar.gz" -C "$version_folder" --strip-components=1
+    echo "Download complete. pnpm is now executable."
 
+    # Add pnpm path to PATH variable
+    echo "Updating bash PATH settings"
 
-    # Add Node.js path to PATH variable
-    echo "Updating RVM PATH settings for Node.js"
+    # Path to the .rvmshrc file
+    rvmshrc_path="$HOME/.rvm/.rvmshrc"
 
-    # Define the .rvmrc path
-    rvmrc_path="$HOME/.rvm/.rvmrc"
 
     # Check for existing line and either update or create it
-    if grep -q "export PATH=\$HOME/.node/v[^:]*/bin:\$PATH" "$rvmrc_path"; then
+    if grep -q "export PATH=\$HOME/.pnpm/v[^:]*:\$PATH" "$rvmshrc_path"; then
         # Update existing line
-        sed -i "s|export PATH=\$HOME/.node/v[^:]*/bin:\$PATH|export PATH=\$HOME/.node/$install_version/bin:\$PATH|" "$rvmrc_path"
+        sed -i "s|export PATH=\$HOME/.pnpm/v[^:]*:\$PATH|export PATH=\$HOME/.pnpm/v$install_version:\$PATH|" "$rvmshrc_path"
     else
         # Create new line with comments
-        echo "# START RVM NODE PATH" >> "$rvmrc_path"
-        echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> "$rvmrc_path"
-        echo "# END RVM NODE PATH" >> "$rvmrc_path"
+        echo "# START RVM PNPM PATH" >> "$rvmshrc_path"
+        echo "export PATH=\$HOME/.pnpm/v$install_version:\$PATH" >> "$rvmshrc_path"
+        echo "# END RVM PNPM PATH" >> "$rvmshrc_path"
     fi
 
-    node -v
+    # Source the updated file
+    source "$rvmshrc_path"
+
+    pnpm -v
 }
 
 ## UPDATE ##
