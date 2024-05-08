@@ -15,6 +15,19 @@ $RUNTIME = "pnpm"
 # rvm add node 18           - installs latest version of node 18
 # rvm add node 18.14.12     - installs this specific version
 
+download() {
+  if command -v curl > /dev/null 2>&1; then
+    curl -fsSL "$1"
+  else
+    wget -qO- "$1"
+  fi
+}
+
+abort() {
+  printf "%s\n" "$@"
+  exit 1
+}
+
 add() {
     # Check for at least one argument
     if [ -z "$1" ]; then
