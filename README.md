@@ -42,11 +42,10 @@ nvm < rvmsh < asdf
 * The goal of this project is to be a more-encompassing, monolithic version of nvm. If your need is something more versatile / modular, asdf may be a better option
 
 Currently supports:
- - jq
  - node
  - pnpm
 
-* Does not support npm currently
+* Does not support npm / npx currently
 
 Working on 
  - standalone npm / npx support
@@ -104,76 +103,6 @@ rvm add pnpm 8
 or even
 ```
 rvm install pnpm 8.14.0
-```
-
-### Upgrade a runner
-Installs latest version of the runner (of the same major version) and sets this new version as default
-```
-rvm upgrade pnpm
-```
-
-### Set a specific runner version as default
-Use either `set` or `use`
-```
-rvm set pnpm 18.14.0
-```
-or
-```
-rvm use pnpm 18.14.0
-```
-
-### Show version of default runner
-```
-rvm show pnpm
-```
-
-### Using the runner
-Use the default runner:
-```
-pnpm build
-```
-Use a specific runner:
-```
-pnpm 8.14.0 build
-```
-
-### Show all installed versions of a specific runner
-```
-rvm showall pnpm
-```
-
-or 
-```
-rvm all pnpm
-```
-
-### Remove specific version of a runner
-```
-rvm remove pnpm 8.14.0
-```
-
-### Prune all older versions of a runner
-This deletes all versions of a runner older than the specified runner (specified version not included)
-```
-rvm prune pnpm 6.12.4
-```
-
-### Remove all versions of a runner
-```
-rvm removeall pnpm
-```
-
-### Uninstall rvm 
-```
-rvm uninstall rvm
-```
-```
-rvm remove rvm
-```
-
-### Update rvm
-```
-rvm update rvm
 ```
 
 
