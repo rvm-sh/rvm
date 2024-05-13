@@ -256,7 +256,6 @@ install_specific_version() {
         echo "export PATH=\$HOME/.node/$install_version/bin:\$PATH" >> "$rvmrc_path"
         echo "# END RVM NODE PATH" >> "$rvmrc_path"
     fi
-
 }
 
 ## UPDATE ##

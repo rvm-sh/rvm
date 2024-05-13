@@ -44,6 +44,7 @@ nvm < rvmsh < asdf
 Currently supports:
  - node
  - pnpm
+ - typescript
 
 * Does not support npm / npx currently
 
@@ -51,7 +52,7 @@ Working on
  - standalone npm / npx support
  - bun
  - yarn
- - typescript
+
  - deno
  - llrt
 
