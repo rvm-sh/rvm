@@ -154,3 +154,6 @@ Why Rust - just the language I'm trying to master. The "R" in rvm is for runtime
 Why only 4 languages - these are the only languages I use. Goal is to add more if I start using other languages
 Why only Linux - currently I only use Linux and I'd like to support the ecosystem
 Why pnpm/yarn - wanted an easy way to install and use these package managers instead of npm (npm is default in node)
+
+
+sjhfksjdfhkdjhfskj

@@ -160,11 +160,19 @@ impl FileWatcher {
             let _ = child.wait().await;
         }
 
-        println!("Running: {} {}", self.command, self.args.join(" "));
+        // Build full command string
+        let full_command = if self.args.is_empty() {
+            self.command.clone()
+        } else {
+            format!("{} {}", self.command, self.args.join(" "))
+        };
 
-        // Start new process
-        let mut cmd = Command::new(&self.command);
-        cmd.args(&self.args);
+        println!("Running: {}", full_command);
+
+        // Run through shell to handle &&, ||, pipes, etc.
+        let mut cmd = Command::new("/bin/sh");
+        cmd.arg("-c");
+        cmd.arg(&full_command);
         cmd.stdout(Stdio::inherit());
         cmd.stderr(Stdio::inherit());
 

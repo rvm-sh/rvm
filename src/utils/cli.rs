@@ -57,6 +57,12 @@ pub enum Commands {
         #[arg(required = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// List runtimes, available versions, or installed versions
+    List {
+        /// Arguments (runtimes | available <runtime> | installed <runtime>)
+        #[arg(required = true)]
+        args: Vec<String>,
+    },
 }
 
 pub fn parse() -> Cli {

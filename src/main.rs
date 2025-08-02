@@ -1,13 +1,13 @@
-mod cli;
-mod watcher;
+mod runtime;
+mod utils;
 
-use cli::Commands;
-use watcher::FileWatcher;
+use utils::cli::Commands;
+use utils::watcher::FileWatcher;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     println!("Hello!");
-    let cli = cli::parse();
+    let cli = utils::cli::parse();
 
     match &cli.command {
         Commands::Add { runtime, version } => {
@@ -36,6 +36,9 @@ async fn main() -> anyhow::Result<()> {
         Commands::Watch { args } => {
             let mut watcher = FileWatcher::new(args.clone())?;
             watcher.start().await?;
+        }
+        Commands::List { args } => {
+            utils::list::handle_list_command(args)?;
         }
     }
 
