@@ -105,7 +105,7 @@ rvm use <runtime> <version>
 ## Watch for changes
 Watch for changes is implemented in time due to the complex nature of determining when best to run, and also the overhead in actually compiling the application.
 
-The last dash-number (e.g. `-5`) is the rebuild time. To account for some scenarios where a dash-number may need to be part of the inner argument (and the user does not want to set a time interval, we allow the inner argument to be put in double quotes)
+The last dash-number (e.g. `-5`) is the rebuild time. To account for some scenarios where a dash-number may need to be part of the inner argument (or for more complex commands), the inner argument can put in double quotes)
 ```
 rvm watch <command> -<time_in_seconds>
 
@@ -114,6 +114,8 @@ rvm watch cargo run -5
 
 ## Example where the dash-number is part of the inner argument
 rvm watch "git diff -3"
+
+rvm watch "cargo build && ./target/debug/rvm" -10
 ```
 
 
@@ -154,6 +156,3 @@ Why Rust - just the language I'm trying to master. The "R" in rvm is for runtime
 Why only 4 languages - these are the only languages I use. Goal is to add more if I start using other languages
 Why only Linux - currently I only use Linux and I'd like to support the ecosystem
 Why pnpm/yarn - wanted an easy way to install and use these package managers instead of npm (npm is default in node)
-
-
-sjhfksjdfhkdjhfskj
