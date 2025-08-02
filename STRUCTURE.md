@@ -11,7 +11,7 @@ This file aims to document the actual functions that each runtime manager will h
 | `rvm prune <runtime> <version>` | `runtime.prune(version)` |
 | `rvm set <runtime> <version>` | `runtime.set_default(version)` |
 | `rvm use <runtime> <version>` | `runtime.use_version(version)` |
-| `rvm list <runtime>` | `runtime.list_installed()`|
+| `rvm list installed <runtime>` | `runtime.list_installed()`|
 | `rvm list available <runtime>` | `runtime.list_available()` |
 | `rvm list runtimes` | `list_supported_runtimes()` |
 

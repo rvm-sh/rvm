@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use crate::utils::error::{Result, RvmError};
 use std::fs;
 
 // Import runtime modules
@@ -57,6 +57,6 @@ pub fn list_supported_runtimes() -> Result<Vec<String>> {
 pub fn get_runtime(name: &str) -> Result<Box<dyn Runtime>> {
     match name {
         "node" => Ok(Box::new(node::NodeRuntime)),
-        _ => Err(anyhow!("Unsupported runtime: {}", name)),
+        _ => Err(RvmError::UnsupportedRuntime(name.to_string())),
     }
 }

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use super::error::Result;
 use crate::runtime;
 
 pub fn handle_list_command(args: &[String]) -> Result<()> {
@@ -24,14 +24,40 @@ pub fn handle_list_command(args: &[String]) -> Result<()> {
                 println!("Error: 'list available' requires a runtime name");
                 return Ok(());
             }
-            println!("Available versions for {}: (not implemented yet)", args[1]);
+            match runtime::get_runtime(&args[1]) {
+                Ok(rt) => {
+                    match rt.list_available() {
+                        Ok(versions) => {
+                            println!("Available versions for {}:", args[1]);
+                            for version in versions {
+                                println!("  {}", version);
+                            }
+                        }
+                        Err(e) => println!("Error listing available versions: {}", e),
+                    }
+                }
+                Err(e) => println!("Error: {}", e),
+            }
         }
         "installed" => {
             if args.len() < 2 {
                 println!("Error: 'list installed' requires a runtime name");
                 return Ok(());
             }
-            println!("Installed versions for {}: (not implemented yet)", args[1]);
+            match runtime::get_runtime(&args[1]) {
+                Ok(rt) => {
+                    match rt.list_installed() {
+                        Ok(versions) => {
+                            println!("Installed versions for {}:", args[1]);
+                            for version in versions {
+                                println!("  {}", version);
+                            }
+                        }
+                        Err(e) => println!("Error listing installed versions: {}", e),
+                    }
+                }
+                Err(e) => println!("Error: {}", e),
+            }
         }
         _ => {
             println!("Error: Unknown list command '{}'. Use: runtimes, available <runtime>, or installed <runtime>", args[0]);

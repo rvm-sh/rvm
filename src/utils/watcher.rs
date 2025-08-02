@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use super::error::{Result, RvmError};
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher, Event, EventKind};
 use std::path::Path;
 use std::process::Stdio;
@@ -28,7 +28,7 @@ impl FileWatcher {
 
     fn parse_args(args: Vec<String>) -> Result<(String, Vec<String>, u64)> {
         if args.is_empty() {
-            return Err(anyhow!("No command provided"));
+            return Err(RvmError::MissingArgument("command".to_string()));
         }
 
         // Check if first arg is a quoted command (contains spaces)
@@ -107,7 +107,7 @@ impl FileWatcher {
 
         let (tx, rx) = mpsc::channel();
         let mut watcher = RecommendedWatcher::new(
-            move |result: Result<Event, notify::Error>| {
+            move |result: std::result::Result<Event, notify::Error>| {
                 if let Ok(event) = result {
                     if let EventKind::Modify(_) | EventKind::Create(_) = event.kind {
                         // Filter out temporary files and build directories
@@ -181,7 +181,7 @@ impl FileWatcher {
                 self.current_process = Some(child);
                 Ok(())
             }
-            Err(e) => Err(anyhow!("Failed to start process: {}", e)),
+            Err(e) => Err(RvmError::CommandExecutionFailed(e.to_string())),
         }
     }
 }
