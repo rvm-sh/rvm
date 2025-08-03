@@ -49,8 +49,14 @@ pub fn handle_list_command(args: &[String]) -> Result<()> {
                     match rt.list_installed() {
                         Ok(versions) => {
                             println!("Installed versions for {}:", args[1]);
-                            for version in versions {
-                                println!("  {}", version);
+                            if versions.is_empty() {
+                                println!("  No versions installed");
+                            } else {
+                                for version in versions {
+                                    // Remove 'v' prefix for display
+                                    let clean_version = version.strip_prefix('v').unwrap_or(&version);
+                                    println!("  ✓ {}", clean_version);
+                                }
                             }
                         }
                         Err(e) => println!("Error listing installed versions: {}", e),
@@ -60,7 +66,11 @@ pub fn handle_list_command(args: &[String]) -> Result<()> {
             }
         }
         _ => {
-            println!("Error: Unknown list command '{}'. Use: runtimes, available <runtime>, or installed <runtime>", args[0]);
+            println!("Unknown list command. To use list, you can either use available or installed:\n");
+            println!("rvm list available <runtime> - lists all available runtime versions in the public repository");
+            println!("e.g: rvm list available node\n");
+            println!("rvm list installed <runtime> - lists all locally installed versions");
+            println!("e.g: rvm list installed node");
         }
     }
     

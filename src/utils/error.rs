@@ -22,6 +22,12 @@ pub enum RvmError {
     #[error("Version {version} is not available for runtime {runtime}")]
     VersionNotAvailable { runtime: String, version: String },
     
+    #[error("Version {0} not found")]
+    VersionNotFound(String),
+    
+    #[error("Version {0} is already installed")]
+    VersionAlreadyInstalled(String),
+    
     #[error("Unable to determine latest version for runtime {0}")]
     LatestVersionUnavailable(String),
 
@@ -103,6 +109,15 @@ pub enum RvmError {
     
     #[error("HTTP request error: {0}")]
     HttpError(String),
+    
+    #[error("Reqwest error: {0}")]
+    ReqwestError(#[from] reqwest::Error),
+    
+    #[error("Unsupported architecture: {0}")]
+    UnsupportedArchitecture(String),
+    
+    #[error("Home directory not found")]
+    HomeDirectoryNotFound,
 
     // Generic errors
     #[error("Internal error: {0}")]

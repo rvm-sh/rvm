@@ -147,6 +147,10 @@ rvm watch "cargo build && ./target/debug/rvm" -10
  - go - runtime install, version management, version use and watch mode
  - rust - runtime install and watch mode (rustup / cargo already manages versions)
 
+## Key Notes
+1. All runtimes are installed in their respective `.<runtime>/v<version>` in the `$HOME` folder (`home/<user>`). This may be different from the standard installation directory. For example, golang installation has the files put in `usr/local`. The difference is that files in the user's home folder is only available to the user, while `usr/local` makes it available to every user.
+2. Settings for path is put in `.profile`. In some terminals and distros, this may not work. For now, you can choose to source the `.profile` from your terminal's specific settings.
+
 
 
 ## Why?
