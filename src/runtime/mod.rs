@@ -3,6 +3,7 @@ use std::fs;
 
 // Import runtime modules
 pub mod node;
+pub mod go;
 
 /// Runtime trait that all runtime managers must implement
 pub trait Runtime: Send {
@@ -56,6 +57,7 @@ pub fn list_supported_runtimes() -> Result<Vec<String>> {
 pub fn get_runtime(name: &str) -> Result<Box<dyn Runtime>> {
     match name {
         "node" => Ok(Box::new(node::NodeRuntime)),
+        "go" => Ok(Box::new(go::GoRuntime)),
         _ => Err(RvmError::UnsupportedRuntime(name.to_string())),
     }
 }
