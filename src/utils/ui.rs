@@ -1,4 +1,5 @@
 use termion::terminal_size;
+use std::time::{Duration, Instant};
 
 /// Get terminal width with fallback
 fn get_terminal_width() -> usize {
@@ -44,6 +45,31 @@ pub fn display_header() {
 pub fn display_separator() {
     println!("───");
     println!();
+}
+
+/// Display execution time in bottom right corner
+pub fn display_execution_time(duration: Duration) {
+    let terminal_width = get_terminal_width();
+    let time_str = format!("⏱️  Completed in {:.2}s", duration.as_secs_f64());
+    
+    // Position the time in the bottom right
+    let padding = terminal_width.saturating_sub(time_str.chars().count());
+    println!("\n{}{}", " ".repeat(padding), time_str);
+}
+
+/// Display a step with an icon and message
+pub fn display_step(message: &str) {
+    println!("🔄 {}", message);
+}
+
+/// Display a success step with checkmark
+pub fn display_success(message: &str) {
+    println!("✅ {}", message);
+}
+
+/// Display an error step with X mark
+pub fn display_error(message: &str) {
+    println!("❌ {}", message);
 }
 
 /// Display a complete banner (for compatibility)

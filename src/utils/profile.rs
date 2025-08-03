@@ -1,4 +1,5 @@
 use crate::utils::error::{Result, RvmError};
+use crate::utils::ui::{display_step, display_success};
 use crate::utils::version::get_runtime_home;
 use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
@@ -70,9 +71,12 @@ pub fn add_runtime_to_path(runtime_name: &str, version: &str) -> Result<()> {
 
 /// Remove specific runtime version from PATH in .profile
 pub fn remove_runtime_from_path(runtime_name: &str, version: &str) -> Result<()> {
+    display_step(&format!("Removing {} {} from PATH", runtime_name, version));
+    
     let profile_path = get_profile_file()?;
     
     if !profile_path.exists() {
+        display_success("No profile file found");
         return Ok(());
     }
     
@@ -85,6 +89,7 @@ pub fn remove_runtime_from_path(runtime_name: &str, version: &str) -> Result<()>
     let reader = BufReader::new(file);
     let mut lines: Vec<String> = Vec::new();
     let mut skip_next = false;
+    let mut removed_lines = 0;
     
     for line in reader.lines() {
         let line = line?;
@@ -92,12 +97,14 @@ pub fn remove_runtime_from_path(runtime_name: &str, version: &str) -> Result<()>
         // Skip the comment line added by rvm
         if line.contains(&format!("# Added by rvm for {} {}", runtime_name, version)) {
             skip_next = true;
+            removed_lines += 1;
             continue;
         }
         
         // Skip the export line if it contains our path
         if skip_next && line.contains(path_string.as_ref()) {
             skip_next = false;
+            removed_lines += 1;
             continue;
         }
         
@@ -108,21 +115,26 @@ pub fn remove_runtime_from_path(runtime_name: &str, version: &str) -> Result<()>
     // Write back the filtered lines
     fs::write(&profile_path, lines.join("\n"))?;
     
-    println!("Removed {} {} from PATH in ~/.profile", runtime_name, version);
+    if removed_lines > 0 {
+        display_success(&format!("Removed {} {} from PATH in ~/.profile", runtime_name, version));
+    } else {
+        display_success(&format!("{} {} was not in PATH", runtime_name, version));
+    }
     
     Ok(())
 }
 
 /// Set a runtime version as the default (remove others, add this one)
 pub fn set_default_runtime(runtime_name: &str, version: &str) -> Result<()> {
+    display_step(&format!("Setting {} {} as default runtime", runtime_name, version));
+    
     // First, remove any existing PATH entries for this runtime
     remove_all_runtime_paths(runtime_name)?;
     
     // Then add the new version
     add_runtime_to_path(runtime_name, version)?;
     
-    println!("Set {} {} as default runtime", runtime_name, version);
-    
+    display_success(&format!("Set {} {} as default runtime", runtime_name, version));
     Ok(())
 }
 
@@ -179,10 +191,11 @@ pub fn remove_all_runtime_paths(runtime_name: &str) -> Result<()> {
 pub fn reload_profile() -> Result<()> {
     use std::process::Command;
     
+    display_step("Reloading shell profile");
     let profile_path = get_profile_file()?;
     
     if !profile_path.exists() {
-        println!("No profile file found to reload");
+        display_success("No profile file found to reload");
         return Ok(());
     }
     
@@ -195,10 +208,13 @@ pub fn reload_profile() -> Result<()> {
         .map_err(|e| RvmError::CommandExecutionFailed(e.to_string()))?;
     
     if output.status.success() {
-        println!("✅ Profile reloaded successfully");
+        display_success("Profile reloaded successfully");
         println!("💡 Runtime is now available in new shell sessions");
+        println!("📝 To use the runtime in your current shell, run:");
+        println!("   source ~/.profile");
+        println!("   OR start a new terminal session");
     } else {
-        println!("⚠️  Couldn't automatically reload profile");
+        display_success("Couldn't automatically reload profile");
         println!("📝 To use the runtime immediately, run:");
         println!("   source ~/.profile");
         println!("Or restart your terminal/desktop session.");

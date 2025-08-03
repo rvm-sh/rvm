@@ -4,9 +4,11 @@ mod utils;
 use utils::cli::Commands;
 use utils::error::Result;
 use utils::watcher::FileWatcher;
+use std::time::Instant;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let start_time = Instant::now();
     utils::ui::display_header();
     let cli = utils::cli::parse();
 
@@ -14,11 +16,11 @@ async fn main() -> Result<()> {
         Commands::Add { runtime, version } => match runtime::get_runtime(runtime) {
             Ok(rt) => {
                 let version = version.clone();
-                if let Err(e) = tokio::task::spawn_blocking(move || rt.install(version.as_deref()))
+                if let Err(e) = tokio::task::spawn_blocking(move || rt.add(version.as_deref()))
                     .await
                     .unwrap()
                 {
-                    println!("Error installing {}: {}", runtime, e);
+                    println!("Error adding {}: {}", runtime, e);
                 }
             }
             Err(e) => println!("Error: {}", e),
@@ -97,5 +99,7 @@ async fn main() -> Result<()> {
         }
     }
 
+    let duration = start_time.elapsed();
+    utils::ui::display_execution_time(duration);
     Ok(())
 }

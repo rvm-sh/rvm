@@ -7,7 +7,7 @@ pub mod node;
 /// Runtime trait that all runtime managers must implement
 pub trait Runtime: Send {
     // Installation & Removal Functions
-    fn install(&self, version: Option<&str>) -> Result<()>;
+    fn add(&self, version: Option<&str>) -> Result<()>;
     fn remove(&self, version: Option<&str>) -> Result<()>;
     fn update(&self) -> Result<()>;
     fn prune(&self, keep_version: &str) -> Result<()>;
@@ -19,15 +19,10 @@ pub trait Runtime: Send {
     // Information & Discovery Functions
     fn list_installed(&self) -> Result<Vec<String>>;
     fn list_available(&self) -> Result<Vec<String>>;
-    fn get_current_version(&self) -> Result<Option<String>>;
     fn resolve_version(&self, version_input: &str) -> Result<String>;
     
     // Internal version resolution helpers
     fn fetch_available_versions(&self) -> Result<serde_json::Value>;
-    
-    // Metadata Functions (Internal Use Only)
-    fn name(&self) -> &str;
-    fn binary_name(&self) -> &str;
 }
 
 /// Auto-discover supported runtimes by scanning runtime module files
