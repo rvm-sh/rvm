@@ -335,7 +335,6 @@ fn extract_major_version(version: &str) -> Option<u32> {
 /// Returns formatted strings organized by channel (LTS, Stable, Beta, etc.)
 /// Hierarchy: top 4 major versions → top 4 major.minor per major → top 4 patches per major.minor
 pub fn group_versions_by_channel(version_infos: Vec<VersionInfo>) -> Vec<String> {
-    use std::collections::HashMap;
     
     // Group by channel, then by major, then by major.minor
     let mut channel_groups: BTreeMap<String, BTreeMap<u32, BTreeMap<String, Vec<String>>>> = BTreeMap::new();

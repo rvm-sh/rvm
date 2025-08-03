@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[allow(dead_code)] // Many variants are for future features
 pub enum RvmError {
     // Runtime-related errors
     #[error("Unsupported runtime: {0}")]

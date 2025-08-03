@@ -1,5 +1,5 @@
 use termion::terminal_size;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// Get terminal width with fallback
 fn get_terminal_width() -> usize {
@@ -41,11 +41,6 @@ pub fn display_header() {
     println!(); // Add some space after header
 }
 
-/// Display a subtle separator (optional, for use between sections)
-pub fn display_separator() {
-    println!("───");
-    println!();
-}
 
 /// Display execution time in bottom right corner
 pub fn display_execution_time(duration: Duration) {
@@ -72,7 +67,3 @@ pub fn display_error(message: &str) {
     println!("❌ {}", message);
 }
 
-/// Display a complete banner (for compatibility)
-pub fn display_banner() {
-    display_header();
-}

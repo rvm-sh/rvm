@@ -1,12 +1,11 @@
 use super::Runtime;
 use crate::utils::download::{download_and_extract, get_architecture};
 use crate::utils::error::{Result, RvmError};
-use crate::utils::profile::{add_runtime_to_path, reload_profile, set_default_runtime, remove_runtime_from_path};
+use crate::utils::profile::{reload_profile, set_default_runtime, remove_runtime_from_path};
 use crate::utils::ui::{display_step, display_success, display_error};
 use crate::utils::version::{is_version_installed, get_runtime_home, remove_version, list_installed_versions, resolve_installed_version, apply_version_to_current_session};
 use reqwest::blocking;
 use serde::Deserialize;
-use std::os::unix::fs::PermissionsExt;
 
 /// Node.js runtime manager
 pub struct NodeRuntime;
@@ -14,9 +13,6 @@ pub struct NodeRuntime;
 #[derive(Deserialize)]
 struct NodeRelease {
     version: String,
-    date: String,
-    files: Vec<String>,
-    npm: Option<String>,
     lts: serde_json::Value, // Can be false or a string
 }
 
