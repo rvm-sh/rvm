@@ -103,7 +103,7 @@ rvm use <runtime> <version>
 ```
 
 ## Watch for changes
-Watch for changes is implemented in time due to the complex nature of determining when best to run, and also the overhead in actually compiling the application.
+Watch for changes is implemented in time due to the complex nature of determining when best to run, and also the overhead in actually compiling the application. Ignores any files/folders that are named in the .gitignore files.
 
 The last dash-number (e.g. `-5`) is the rebuild time. To account for some scenarios where a dash-number may need to be part of the inner argument (or for more complex commands), the inner argument can put in double quotes)
 ```
@@ -118,7 +118,7 @@ rvm watch "git diff -3"
 rvm watch "cargo build && ./target/debug/rvm" -10
 ```
 
-
+* Please note that the watcher may fail if your inotify watches are not sufficient. To increase your inotify watches, please follow [this guide](https://www.suse.com/support/kb/doc/?id=000020048) (should work in most distros)
 
 
 ## Supported Runtimes and Features
@@ -154,9 +154,12 @@ rvm watch "cargo build && ./target/debug/rvm" -10
 
 
 ## Why?
-Why another tool - yes, I am aware of [this](https://xkcd.com/927/). Just wanted one that works with my mental model. Hopefully you will find it useful too
-Why not in Shell - originally built in shell but I got tired of trying to shoehorn it in shell and decided to write in another language
-Why Rust - just the language I'm trying to master. The "R" in rvm is for runtime rather than rust
-Why only 4 languages - these are the only languages I use. Goal is to add more if I start using other languages
-Why only Linux - currently I only use Linux and I'd like to support the ecosystem
-Why pnpm/yarn - wanted an easy way to install and use these package managers instead of npm (npm is default in node)
+- Why another tool - yes, I am aware of [this](https://xkcd.com/927/). Just wanted one that works with my mental model. Hopefully you will find it useful too
+- Why not in Shell:
+ - originally built in shell but I got tired of trying to shoehorn it in shell and decided to write in another language
+ - almost everything i need is available in a module
+ - can't be bothered trying to write/match posix, bash, zsh, etc
+- Why Rust - ~~just the language I'm trying to master.~~ Just had to choose one. Note, the "R" in rvm is for runtime rather than rust
+- Why only 4 languages - these are the only languages I use. Goal is to add more if I start using other languages
+- Why only Linux - currently I only use Linux and I'd like to support the ecosystem
+- Why pnpm/yarn - wanted an easy way to install and use these package managers instead of npm (npm is default in node)

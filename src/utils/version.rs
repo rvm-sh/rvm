@@ -456,7 +456,7 @@ pub fn group_versions_by_channel(version_infos: Vec<VersionInfo>) -> Vec<String>
             // Add truncation notice if we truncated anything
             if truncated {
                 result.push(
-                    "... displaying top 4 versions, all other versions truncated".to_string(),
+                    "... displaying only latest versions, all other versions truncated".to_string(),
                 );
             }
 
@@ -509,7 +509,9 @@ pub fn group_versions_by_channel(version_infos: Vec<VersionInfo>) -> Vec<String>
         }
 
         if truncated {
-            result.push("... displaying top 4 versions, all other versions truncated".to_string());
+            result.push(
+                "... displaying only latest versions, all other versions truncated".to_string(),
+            );
         }
 
         result.push(String::new());

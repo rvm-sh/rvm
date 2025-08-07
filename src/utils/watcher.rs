@@ -1,6 +1,7 @@
 use super::error::{Result, RvmError};
+use ignore::WalkBuilder;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher, Event, EventKind};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::mpsc;
 use std::time::Duration;
@@ -12,18 +13,52 @@ pub struct FileWatcher {
     args: Vec<String>,
     interval: u64,
     current_process: Option<Child>,
+    watch_paths: Vec<PathBuf>,
 }
 
 impl FileWatcher {
     pub fn new(args: Vec<String>) -> Result<Self> {
         let (command, args, interval) = Self::parse_args(args)?;
         
+        // Build list of directories to watch, respecting .gitignore
+        let watch_paths = Self::build_watch_paths()?;
+        
         Ok(FileWatcher {
             command,
             args,
             interval,
             current_process: None,
+            watch_paths,
         })
+    }
+    
+    fn build_watch_paths() -> Result<Vec<PathBuf>> {
+        let mut paths = Vec::new();
+        
+        let walker = WalkBuilder::new(".")
+            .git_ignore(true)
+            .git_global(false)
+            .git_exclude(false)
+            .hidden(false)
+            .build();
+            
+        for entry in walker {
+            match entry {
+                Ok(entry) => {
+                    if entry.path().is_dir() {
+                        paths.push(entry.path().to_path_buf());
+                    }
+                }
+                Err(_) => continue,
+            }
+        }
+        
+        // Always include current directory
+        if !paths.contains(&PathBuf::from(".")) {
+            paths.insert(0, PathBuf::from("."));
+        }
+        
+        Ok(paths)
     }
 
     fn parse_args(args: Vec<String>) -> Result<(String, Vec<String>, u64)> {
@@ -106,18 +141,15 @@ impl FileWatcher {
         println!("Press Ctrl+C to stop");
 
         let (tx, rx) = mpsc::channel();
+        
         let mut watcher = RecommendedWatcher::new(
             move |result: std::result::Result<Event, notify::Error>| {
                 if let Ok(event) = result {
                     if let EventKind::Modify(_) | EventKind::Create(_) = event.kind {
-                        // Filter out temporary files and build directories
+                        // Basic filtering for temp files only (gitignore is handled at directory level)
                         let should_ignore = event.paths.iter().any(|path| {
                             let path_str = path.to_string_lossy();
-                            path_str.contains("target/") 
-                                || path_str.contains("node_modules/")
-                                || path_str.contains(".git/")
-                                || path_str.ends_with(".tmp")
-                                || path_str.ends_with("~")
+                            path_str.ends_with(".tmp") || path_str.ends_with("~")
                         });
 
                         if !should_ignore {
@@ -129,7 +161,12 @@ impl FileWatcher {
             Config::default(),
         )?;
 
-        watcher.watch(Path::new("."), RecursiveMode::Recursive)?;
+        // Watch only the allowed directories (non-recursive to avoid deep nesting issues)
+        for path in &self.watch_paths {
+            if let Err(e) = watcher.watch(path, RecursiveMode::NonRecursive) {
+                eprintln!("Warning: Failed to watch {}: {}", path.display(), e);
+            }
+        }
 
         // Start initial process
         self.restart_process().await?;
