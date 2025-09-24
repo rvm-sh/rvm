@@ -1,4 +1,1 @@
-# Ignore any zipped files used for builds
-*.tar.xz
-*.tar.gz
-*.zip
+/target
