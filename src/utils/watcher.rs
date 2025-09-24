@@ -1,7 +1,7 @@
 use super::error::{Result, RvmError};
 use ignore::WalkBuilder;
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher, Event, EventKind};
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use std::process::Stdio;
 use std::sync::mpsc;
 use std::time::Duration;

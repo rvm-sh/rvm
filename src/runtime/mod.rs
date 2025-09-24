@@ -4,6 +4,7 @@ use std::fs;
 // Import runtime modules
 pub mod node;
 pub mod go;
+pub mod tailwindcss;
 
 /// Runtime trait that all runtime managers must implement
 pub trait Runtime: Send {
@@ -58,6 +59,7 @@ pub fn get_runtime(name: &str) -> Result<Box<dyn Runtime>> {
     match name {
         "node" => Ok(Box::new(node::NodeRuntime)),
         "go" => Ok(Box::new(go::GoRuntime)),
+        "tailwindcss" => Ok(Box::new(tailwindcss::TailwindCssRuntime)),
         _ => Err(RvmError::UnsupportedRuntime(name.to_string())),
     }
 }
